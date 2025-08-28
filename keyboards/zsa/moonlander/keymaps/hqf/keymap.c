@@ -49,14 +49,11 @@
  *            "domain.com" // Domain
  *        );
  *
- * 3. TEMPLATE MACROS (M_TPL1, M_TPL2)
- *    For frequently used code snippets or text templates:
- *    case M_TPL1:
- *        SEND_STRING(
- *            "template_text" // Your template text
- *            SS_TAP(X_ENT) // Add newline
- *            "more_text" // Continue template
- *        );
+ * 3. Sentences (M_STCE_1, M_STCE_2)
+ *    Like signatures and emails, sends a "sentence" or a "word", it's up to you:
+ *    Example structure:
+ *    case M_STCE_1:
+ *        SEND_STRING("\nsry\n");
  *
  * SPECIAL CHARACTERS REFERENCE
  * --------------------------
@@ -92,10 +89,6 @@
     #define EMAIL_1 "example@domain.com"
     #define EMAIL_2 "example@company.com"
     #define CUSTOM_SOUND SONG(STARTUP_SOUND)
-    #define TEMPLATE_1 "Template 1"
-    #define TEMPLATE_2 "Template 2"
-    #define CUSTOM_SHORTCUT_1 SS_DOWN(X_LCTL) SS_TAP(X_A) SS_UP(X_LCTL)
-    #define CUSTOM_SHORTCUT_2 SS_DOWN(X_LCTL) SS_TAP(X_B) SS_UP(X_LCTL)
 #endif
 
 /**
@@ -215,7 +208,9 @@ enum custom_keycodes {
     M_SIGN2,
     M_EMAIL1,
     M_EMAIL2,
-	// Special characters and symbols
+    M_STCE_1,
+    M_STCE_2,
+    // Special characters and symbols
     M_NBSP,
     M_PAR,
     M_GT,
@@ -230,13 +225,13 @@ enum custom_keycodes {
     M_ARB,
     M_TLD,
     M_BQT,
-	// French accented characters
+    // French accented characters
     M_C_A,
     M_C_E,
     M_C_I,
     M_C_O,
     M_C_U,
-	// Navigation shortcuts
+    // Navigation shortcuts
     M_XLT,
     M_XRT,
     // Layer change sounds
@@ -244,6 +239,8 @@ enum custom_keycodes {
     M_L5_SP,
     M_L6_SP,
     // Gaming features
+    RF_SPD_UP,
+    RF_SPD_DN,
     RF_MOUSE1,
     RF_MOUSE2,
     RF_MOUSE3,
@@ -371,7 +368,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        _______ ,  KC_F1  ,  KC_F2  ,  KC_F3  ,  KC_F4  ,  KC_F5  ,  KC_F6  ,      KC_F7  ,  KC_F8  ,  KC_F9  ,  KC_F10 ,  KC_F11 ,  KC_F12 , KC_BSPC ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃    -    │    \    │    *    │    $    │    {    │    }    │    ~    ┃   ┃  Sign.  │  PgUp   │ Ctrl ←  │    ↑    │ Ctrl →  │  PgDn   │   ^ ¨   ┃ */
-       _______ ,  M_BKS  , KC_BSLS , KC_RBRC ,  M_LBK  ,  M_RBK  ,  M_TLD  ,     M_SIGN1 , KC_PGUP , C_LEFT  ,  KC_UP  , C_RIGHT , KC_PGDN , KC_LBRC ,
+       _______ ,  M_BKS  , KC_BSLS , KC_RBRC ,  M_LBK  ,  M_RBK  ,  M_TLD  ,     M_EMAIL1, KC_PGUP , C_LEFT  ,  KC_UP  , C_RIGHT , KC_PGDN , KC_LBRC ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃    -    │    =    │    |    │    /    │    (    │    )    │         ┃   ┃  Email  │   Home  │    ←    │    ↓    │    →    │   End   │ Enter ⏎ ┃ */
         C_HTG  , KC_EQL  ,  M_PPE  ,  M_SLH  ,  KC_5   , KC_MINS ,  I_PCT  ,     M_EMAIL2, KC_HOME , KC_LEFT , KC_DOWN , KC_RGHT , KC_END  , KC_PENT ,
@@ -393,10 +390,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        _______ , _______ , _______ , _______ , _______ , _______ , _______ ,     KC_CAPS , KC_NUM  , KC_NUM  , KC_PSLS , KC_PAST , KC_PMNS , KC_BSPC ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃         │         │         │ CtAlt↑  │    û    │    ù    │    ~    ┃   ┃ Sign. L │  Copy   │   P7    │   P8    │   P9    │   P+    │   ^ ¨   ┃ */
-       _______ , _______ , _______ ,  X_MX   ,  M_C_U  , KC_QUOT ,  M_TLD  ,     M_SIGN2 , _______ ,  KC_P7  ,  KC_P8  ,  KC_P9  , KC_PPLS , _______ ,
+       _______ , _______ , _______ ,  X_MX   ,  M_C_U  , KC_QUOT ,  M_TLD  ,     M_SIGN1 , _______ ,  KC_P7  ,  KC_P8  ,  KC_P9  , KC_PPLS , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃   ()    │    -    │ CtAlt←  │ CtAltB  │ CtAlt→  │    ù    │    ù    ┃   ┃ Sign. L │  Home   │   P4    │   P5    │   P6    │   P+    │ PEnt  ⏎ ┃ */
-        M_PAR  , _______ ,  X_LT   ,  X_SB   ,  X_RT   , KC_QUOT , KC_QUOT ,     M_EMAIL1, KC_HOME ,  KC_P4  ,  KC_P5  ,  KC_P6  , KC_PPLS , KC_PENT ,
+        M_PAR  , _______ ,  X_LT   ,  X_SB   ,  X_RT   , KC_QUOT , KC_QUOT ,     M_SIGN2 , KC_HOME ,  KC_P4  ,  KC_P5  ,  KC_P6  , KC_PPLS , KC_PENT ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛   ┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃         │         │         │         │         │         ┃                       ┃         │         │         │         │         │         ┃ */
   /* ┃    -    │    â    │    ê    │    î    │    ô    │   ``    ┃                       ┃    -    │   P1    │   P2    │   P3    │ PEnt  ⏎ │ RShft ⇧ ┃ */
@@ -416,11 +413,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* ┃   Esc   │    f①   │    f②   │    f③   │    f④   │    f⑤   │    f⑥   ┃   ┃   f⑦    │    f⑧   │    f⑨   │   f⑩    │   f⑪    │   f⑫    │  Bkspc  ┃ */
        _______ ,  KC_F1  ,  KC_F2  ,  KC_F3  ,  KC_F4  ,  KC_F5  ,  KC_F6  ,      KC_F7  ,  KC_F8  ,  KC_F9  ,  KC_F10 ,  KC_F11 ,  KC_F12 , KC_BSPC ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃    -    │    \    │ C-Copy  │ C-Paste │ L-Copy  │ L-Paste │    ~    ┃   ┃  Bkspc  │  PgUp   │ Ctrl ←  │    ↑    │ Ctrl →  │  PgDn   │   ^ ¨   ┃ */
-       _______ ,  M_BKS  , C_COPY  , C_PASTE , L_COPY  , L_PASTE ,  M_TLD  ,     KC_BSPC , KC_PGUP , C_LEFT  ,  KC_UP  , C_RIGHT , KC_PGDN , KC_LBRC ,
+  /* ┃    -    │    \    │ C-Copy  │ C-Paste │ L-Copy  │ L-Paste │ Sent. 1 ┃   ┃  Bkspc  │  PgUp   │ Ctrl ←  │    ↑    │ Ctrl →  │  PgDn   │   ^ ¨   ┃ */
+       _______ ,  M_BKS  , C_COPY  , C_PASTE , L_COPY  , L_PASTE , M_STCE_1,     KC_BSPC , KC_PGUP , C_LEFT  ,  KC_UP  , C_RIGHT , KC_PGDN , KC_LBRC ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃    -    │    =    │  C-Cut  │ C-Paste │ I-Copy  │ I-Paste │   Del   ┃   ┃ RShft ⇧ │   Home  │    ←    │    ↓    │    →    │   End   │ Enter ⏎ ┃ */
-        C_HTG  , KC_EQL  ,  C_CUT  , C_PASTE , I_COPY  , I_PASTE , KC_DEL  ,     KC_RSFT , KC_HOME , KC_LEFT , KC_DOWN , KC_RGHT , KC_END  , KC_PENT ,
+  /* ┃    -    │    =    │  C-Cut  │ C-Paste │ I-Copy  │ I-Paste │ Sent. 2 ┃   ┃ RShft ⇧ │   Home  │    ←    │    ↓    │    →    │   End   │ Enter ⏎ ┃ */
+        C_HTG  , KC_EQL  ,  C_CUT  , C_PASTE , I_COPY  , I_PASTE , M_STCE_2,     KC_RSFT , KC_HOME , KC_LEFT , KC_DOWN , KC_RGHT , KC_END  , KC_PENT ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛   ┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃ LShft ⇧ │    <    │    @    │    >    │  I-Cut  │ I-Paste ┃                       ┃   n N   │   Bspc  │   Del   │  PgDn   │         │ RShft ⇧ ┃ */
        _______ , KC_NUBS ,  M_ARB  ,  M_GT   ,  I_CUT  , I_PASTE ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
@@ -499,11 +496,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* ┃   Esc   │   & 1   │   é 2   │   " 3   │   ' 4   │   ( 5   │ Goto L0 ┃   ┃  Pscr   │   - 6   │   è 7   │   _ 8   │   ç 9   │   à 0   │  Bkspc  ┃ */
        KC_ESC  ,  KC_1   ,  KC_2   ,  KC_3   ,  KC_4   ,  KC_5   , M_L6_SP ,     KC_PSCR , KC_6   ,  KC_7   ,  KC_8   ,  KC_9   ,  KC_0   ,  KC_BSPC ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃   Tab   │   a A   │   z Z   │   e E   │   r R   │   t T   │   Del   ┃   ┃  Bkspc  │   y Y   │   u U   │   i I   │   o O   │   p P   │   ^ ¨   ┃ */
-       KC_TAB  ,  KC_Q   ,  KC_W   ,  KC_E   ,  KC_R   ,  KC_T   , KC_DEL  ,     KC_BSPC ,  KC_Y   ,  KC_U   ,  KC_I   ,  KC_O   ,  KC_P   , KC_LBRC ,
+  /* ┃   Tab   │   a A   │   z Z   │   e E   │   r R   │   t T   │RapidF Up┃   ┃  Bkspc  │   y Y   │   u U   │   i I   │   o O   │   p P   │   ^ ¨   ┃ */
+       KC_TAB  ,  KC_Q   ,  KC_W   ,  KC_E   ,  KC_R   ,  KC_T   ,RF_SPD_UP,     KC_BSPC ,  KC_Y   ,  KC_U   ,  KC_I   ,  KC_O   ,  KC_P   , KC_LBRC ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃         │   q Q   │   s S   │   d D   │   f F   │   g G   │   Del   ┃   ┃ RShft ⇧ │   h H   │   j J   │   k K   │   l L   │   m M   │ Enter ⏎ ┃ */
-       _______ ,  KC_A   ,  KC_S   ,  KC_D   ,  KC_F   ,  KC_G   , KC_DEL  ,     KC_RSFT ,  KC_H   ,  KC_J   ,  KC_K   ,  KC_L   , KC_SCLN , KC_ENT  ,
+  /* ┃         │   q Q   │   s S   │   d D   │   f F   │   g G   │RapidF Dn┃   ┃ RShft ⇧ │   h H   │   j J   │   k K   │   l L   │   m M   │ Enter ⏎ ┃ */
+       _______ ,  KC_A   ,  KC_S   ,  KC_D   ,  KC_F   ,  KC_G   ,RF_SPD_DN,     KC_RSFT ,  KC_H   ,  KC_J   ,  KC_K   ,  KC_L   , KC_SCLN , KC_ENT  ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛   ┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃         │   w W   │   x X   │   c C   │   v V   │   b B   ┃                       ┃   n N   │   , ?   │   ; .   │   : /   │   ! §   │ RShft ⇧ ┃ */
        _______ ,  KC_Z   ,  KC_X   ,  KC_C   ,  KC_V   ,  KC_B   ,                          KC_N   ,  KC_M   , KC_COMM , KC_DOT  , KC_SLSH , KC_RSFT,
@@ -518,49 +515,60 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 };
 
-uint16_t rapid_fire = 0;
-uint16_t rapid_fire_double = 0;
-uint16_t rapid_fire_double_wait = 0;
+uint16_t rapid_fire_1 = 0;
+uint16_t rapid_fire_2 = 0;
+uint16_t rapid_fire_wait_counter = 0;
+uint16_t rapid_fire_wait_limit = 21;
 
 void matrix_scan_user(void) {
-    if (rapid_fire_double) {
-        switch (rapid_fire_double_wait) {
-            case 0:
-                tap_code16(KC_MS_BTN1);
-                tap_code16(KC_MS_BTN2);
-                break;
-            case 32:
-                break;
-            case 48:
-                break;
-            case 64:
-                break;
-            case 96:
-                break;
-            case 128:
-                break;
+    if (rapid_fire_1 || rapid_fire_2) {
+        rapid_fire_wait_counter++;
+        rapid_fire_wait_counter = rapid_fire_wait_counter % rapid_fire_wait_limit;
+        if (rapid_fire_wait_counter) {
+            return;
         }
-        rapid_fire_double_wait = (++rapid_fire_double) % 3;
-    } else if (rapid_fire) {
-        tap_code16(rapid_fire);
+        if (rapid_fire_1) {
+            tap_code16(rapid_fire_1);
+        }
+        if (rapid_fire_2) {
+            tap_code16(rapid_fire_2);
+        }
     }
 }
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+
     if (record->event.pressed) {
         switch (keycode) {
+        case RF_SPD_UP:
+            if (rapid_fire_wait_limit > 1) {
+                rapid_fire_wait_limit -= 5;
+            } else {
+                PLAY_SONG(dvorak_sound);
+            }
+            return false;
+        case RF_SPD_DN:
+            if (rapid_fire_wait_limit < 50) {
+                rapid_fire_wait_limit += 5;
+            } else {
+                PLAY_SONG(colemak_sound);
+            }
+            return false;
         case RF_MOUSE1:
-            rapid_fire = KC_MS_BTN1;
+            rapid_fire_1 = KC_MS_BTN1;
+            rapid_fire_wait_counter = 0;
             return false;
         case RF_MOUSE2:
-            rapid_fire = KC_MS_BTN2;
+            rapid_fire_1 = KC_MS_BTN2;
+            rapid_fire_wait_counter = 0;
             return false;
         case RF_MOUSE3:
-            rapid_fire = KC_MS_BTN1;
-            rapid_fire_double = KC_MS_BTN2;
-            rapid_fire_double_wait = 15;
+            rapid_fire_1 = KC_MS_BTN1;
+            rapid_fire_2 = KC_MS_BTN2;
+            rapid_fire_wait_counter = 0;
             return false;
         case RF_SPACE:
-            rapid_fire = KC_SPACE;
+            rapid_fire_1 = KC_SPACE;
             return false;
         case M_L4_SP:
             PLAY_SONG(dvorak_sound);
@@ -719,12 +727,18 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             PLAY_SONG(unicode_windows);
             SEND_STRING(SIGNATURE_2);
             return false;
+        case M_STCE_1:
+            SEND_STRING(SENTENCE_1);
+            return false;
+        case M_STCE_2:
+            SEND_STRING(SENTENCE_2);
+            return false;
         case M_EMAIL1:
-            PLAY_SONG(chromatic_sound);
+            //PLAY_SONG(chromatic_sound);
             SEND_STRING(EMAIL_1);
             return false;
         case M_EMAIL2:
-            PLAY_SONG(planck_sound);
+            //PLAY_SONG(planck_sound);
             SEND_STRING(EMAIL_2);
             return false;
         case M_NBSP: // &nbsp;
@@ -804,8 +818,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case RF_MOUSE2:
         case RF_MOUSE3:
         case RF_SPACE:
-            rapid_fire = 0;
-            rapid_fire_double = 0;
+            rapid_fire_1 = 0;
+            rapid_fire_2 = 0;
             return false;
         }
     }
