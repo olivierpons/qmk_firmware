@@ -245,6 +245,9 @@ enum custom_keycodes {
     RF_MOUSE2,
     RF_MOUSE3,
     RF_SPACE,
+    // Mouse jiggling
+    M_JIG_ON,
+    M_JIGOFF,
 };
 
 // Key combination defines for better readability
@@ -337,6 +340,9 @@ float workman_sound          [][2] = SONG(WORKMAN_SOUND);
 float tos_hymn_risen         [][2] = SONG(TOS_HYMN_RISEN);
 float custom_sound           [][2] = SONG(B__NOTE(_G6), B__NOTE(_C7), W__NOTE(_G6), H__NOTE(_A6), B__NOTE(_B6), W__NOTE(_E6), W__NOTE(_E6), B__NOTE(_A6), W__NOTE(_G6), H__NOTE(_F6), B__NOTE(_G6), W__NOTE(_C6), W__NOTE(_C6), B__NOTE(_D6), W__NOTE(_D6), W__NOTE(_E6), B__NOTE(_D6), W__NOTE(_D6), W__NOTE(_G6), B__NOTE(_F6), W__NOTE(_G6), W__NOTE(_A6), B__NOTE(_B6),);
 
+uint8_t mouse_jiggle_active = 0; // 0 = inactive, 1-4 = directions N/E/S/W
+uint16_t mouse_jiggle_timer = 0;
+
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [L_0] = LAYOUT_moonlander(
@@ -373,11 +379,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* ┃    -    │    =    │    |    │    /    │    (    │    )    │         ┃   ┃  Email  │   Home  │    ←    │    ↓    │    →    │   End   │ Enter ⏎ ┃ */
         C_HTG  , KC_EQL  ,  M_PPE  ,  M_SLH  ,  KC_5   , KC_MINS ,  I_PCT  ,     M_EMAIL2, KC_HOME , KC_LEFT , KC_DOWN , KC_RGHT , KC_END  , KC_PENT ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛   ┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃ LShft ⇧ │    <    │    @    │    >    │    [    │    ]    ┃                       ┃   n N   │   Bspc  │   Del   │  PgDn   │         │ RShft ⇧ ┃ */
-       _______ , KC_NUBS ,  M_ARB  ,  M_GT   ,  M_OSB  ,  M_CSB  ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
+  /* ┃         │    <    │    @    │    >    │    [    │    ]    ┃                       ┃   n N   │   Bspc  │   Del   │  PgDn   │         │ RShft ⇧ ┃ */
+       M_JIGOFF, KC_NUBS ,  M_ARB  ,  M_GT   ,  M_OSB  ,  M_CSB  ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃         │         │         │         │         ┃          ┃         ┃ ┃         ┃          ┃   Spc   │         │         │         │         ┃ */
-       _______ , _______ , _______ , _______ , _______ ,            _______ ,   _______ ,            KC_SPC  , _______ , _______ , _______ , _______ ,
+       M_JIG_ON, _______ , _______ , _______ , _______ ,            _______ ,   _______ ,            KC_SPC  , _______ , _______ , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━┛         ┃ ┃         ┗━━━━━━━━━━━━━━━━━━━┓                                          */
                                                 _______ , _______ , _______ ,   _______ , _______ , _______
@@ -532,6 +538,29 @@ void matrix_scan_user(void) {
         }
         if (rapid_fire_2) {
             tap_code16(rapid_fire_2);
+        }
+    }
+    if (mouse_jiggle_active) {
+        if (timer_elapsed(mouse_jiggle_timer) > 5000) { // 5000ms = 5s
+            switch (mouse_jiggle_active) {
+                case 1: // N
+                    tap_code(KC_MS_U);
+                    mouse_jiggle_active = 2; // Next direction: Est
+                    break;
+                case 2: // E
+                    tap_code(KC_MS_R);
+                    mouse_jiggle_active = 3; // Next direction: Sud
+                    break;
+                case 3: // S
+                    tap_code(KC_MS_D);
+                    mouse_jiggle_active = 4; // Next direction: Ouest
+                    break;
+                case 4: // W
+                    tap_code(KC_MS_L);
+                    mouse_jiggle_active = 1; // Loop: back to North
+                    break;
+            }
+            mouse_jiggle_timer = timer_read();
         }
     }
 }
@@ -810,7 +839,19 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             SEND_STRING(SS_DOWN(X_LCTL) SS_DOWN(X_LALT) SS_TAP(X_RIGHT) \
                 SS_UP(X_LALT) SS_UP(X_LCTL));
             return false;
-
+        case M_JIG_ON:
+            if (record->event.pressed) {
+                mouse_jiggle_active = true;
+                mouse_jiggle_timer = timer_read();
+                PLAY_SONG(colemak_sound);
+            }
+            return false;
+        case M_JIGOFF:
+            if (record->event.pressed) {
+                mouse_jiggle_active = false;
+                PLAY_SONG(dvorak_sound);
+            }
+            return false;
         }
     } else { // key released
         switch (keycode) {
