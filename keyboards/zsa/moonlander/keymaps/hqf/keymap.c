@@ -441,40 +441,33 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [L_4] = LAYOUT_moonlander(
 
-  /* RGB_M_P  | Static (no animation) mode                                     */
-  /* RGB_M_B  | Breathing animation mode                                       */
-  /* RGB_M_R  | Rainbow animation mode                                         */
-  /* RGB_M_SW | Swirl animation mode                                           */
-  /* RGB_M_SN | Snake animation mode                                           */
-  /* RGB_M_K  | "Knight Rider" animation mode                                  */
-  /* RGB_M_X  | Christmas animation mode                                       */
-  /* RGB_M_G  | Static gradient animation mode                                 */
-  /* RGB_M_T  | Red,Green,Blue test animation mode                             */
-  /* RGB_HUI  | Increase hue, decrease hue when Shift is held                  */
-  /* RGB_HUD  | Decrease hue, increase hue when Shift is held                  */
-  /* RGB_SAI  | Increase saturation, decrease saturation when Shift is held    */
-  /* RGB_SAD  | Decrease saturation, increase saturation when Shift is held    */
-  /* RGB_VAI  | Increase value (brightness), decrease value when Shift is held */
-  /* RGB_VAD  | Decrease value (brightness), increase value when Shift is held */
+  /* RM_TOGG  | Toggle RGB Matrix on/off                                       */
+  /* RM_NEXT  | Next RGB Matrix effect, RM_PREV for previous                   */
+  /* RM_HUEU  | Increase hue, decrease hue when Shift is held                  */
+  /* RM_HUED  | Decrease hue, increase hue when Shift is held                  */
+  /* RM_SATU  | Increase saturation, decrease saturation when Shift is held    */
+  /* RM_SATD  | Decrease saturation, increase saturation when Shift is held    */
+  /* RM_VALU  | Increase value (brightness), decrease value when Shift is held */
+  /* RM_VALD  | Decrease value (brightness), increase value when Shift is held */
 
   /* ┏━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┓   ┏━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┓ */
   /* ┃ A on/off│         │         │         │         │         │         ┃   ┃         │         │         │         │         │         │         ┃ */
-       RGB_TOG , _______ , _______ , _______ , _______ , _______ , _______ ,     _______ , _______ , _______ , _______ , _______ , _______ , _______ ,
+       RM_TOGG , _______ , _______ , _______ , _______ , _______ , _______ ,     _______ , _______ , _______ , _______ , _______ , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃         │         │         │         │         │         │         ┃   ┃         │         │         │         │         │         │         ┃ */
-       RGB_M_P , RGB_M_SW, RGB_M_X , _______ , RGB_SAI , RGB_SAD , _______ ,     _______ , _______ ,  AU_ON  , MU_ON   , CK_ON   , _______ , _______ ,
+       _______ , _______ , _______ , _______ , RM_SATU , RM_SATD , _______ ,     _______ , _______ ,  AU_ON  , MU_ON   , CK_ON   , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨   ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃         │         │         │         │         │         │         ┃   ┃         │         │         │(Audio/J)│(Click/J)│         │         ┃ */
-       RGB_M_B , RGB_M_SN, RGB_M_G , _______ , RGB_VAI , RGB_VAD , _______ ,     _______ , _______ ,  AU_OFF , MU_OFF  , CK_OFF  , _______ , _______ ,
+       _______ , _______ , _______ , _______ , RM_VALU , RM_VALD , _______ ,     _______ , _______ ,  AU_OFF , MU_OFF  , CK_OFF  , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛   ┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃         │         │         │         │         │         ┃                       ┃         │         │         │         │         │         ┃ */
-       RGB_M_R , RGB_M_K , RGB_M_T , _______ , RGB_HUI , RGB_HUD ,                         _______ , _______ , MU_NEXT , CK_UP   , _______ , _______ ,
+       _______ , _______ , _______ , _______ , RM_HUEU , RM_HUED ,                         _______ , _______ , MU_NEXT , CK_UP   , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃         │         │         │         │         ┃          ┃ Goto L4 ┃ ┃         ┃          ┃         │         │         │         │         ┃ */
        _______ , _______ , _______ , _______ , _______ ,           TD(TD_RF),   _______ ,            _______ , MU_TOGG , CK_DOWN , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━┛         ┃ ┃         ┗━━━━━━━━━━━━━━━━━━━┓                                          */
-                                               RGB_RMOD , RGB_MOD , _______ ,   _______ , _______ , _______
+                                               RM_PREV , RM_NEXT , _______ ,   _______ , _______ , _______
   /*                                          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛                                          */
       ),
 
@@ -547,19 +540,19 @@ void matrix_scan_user(void) {
         if (timer_elapsed(mouse_jiggle_timer) > 800) { // 800ms = 0.8s
             switch (mouse_jiggle_active) {
                 case 1: // N
-                    tap_code(KC_MS_U);
+                    tap_code(MS_UP);
                     mouse_jiggle_active = 3;
                     break;
                 // case 2: // E
-                //     tap_code(KC_MS_R);
+                //     tap_code(MS_RGHT);
                 //     mouse_jiggle_active = 3;
                 //     break;
                 case 3: // S
-                    tap_code(KC_MS_D);
+                    tap_code(MS_DOWN);
                     mouse_jiggle_active = 1;
                     break;
                 // case 4: // W
-                //     tap_code(KC_MS_L);
+                //     tap_code(MS_LEFT);
                 //     mouse_jiggle_active = 1;
                 //     break;
             }
@@ -587,16 +580,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
         case RF_MOUSE1:
-            rapid_fire_1 = KC_MS_BTN1;
+            rapid_fire_1 = MS_BTN1;
             rapid_fire_wait_counter = 0;
             return false;
         case RF_MOUSE2:
-            rapid_fire_1 = KC_MS_BTN2;
+            rapid_fire_1 = MS_BTN2;
             rapid_fire_wait_counter = 0;
             return false;
         case RF_MOUSE3:
-            rapid_fire_1 = KC_MS_BTN1;
-            rapid_fire_2 = KC_MS_BTN2;
+            rapid_fire_1 = MS_BTN1;
+            rapid_fire_2 = MS_BTN2;
             rapid_fire_wait_counter = 0;
             return false;
         case RF_SPACE:
