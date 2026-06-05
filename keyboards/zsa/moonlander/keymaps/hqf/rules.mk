@@ -4,6 +4,7 @@ TAP_DANCE_ENABLE = yes
 # Enable Audio features
 AUDIO_ENABLE = yes
 MUSIC_ENABLE = yes
+AUDIO_CLICKY_ENABLE = yes
 
 # Commented features that can be enabled if needed
 # MIDI_ENABLE = yes
