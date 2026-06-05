@@ -220,8 +220,10 @@ enum custom_keycodes {
     M_RBK,
     M_SLH,
     M_HTG,
-    M_OSB,
-    M_CSB,
+    M_OSB, // [ Opening Square bracket
+    M_CSB, // ] Closing Square bracket
+    M_COSB, // [ Ctrl + Opening Square bracket
+    M_CCSB, // ] Ctrl + Closing Square bracket
     M_ARB,
     M_TLD,
     M_BQT,
@@ -264,14 +266,15 @@ enum custom_keycodes {
 #define L_6 6 // Rapid Fire Gaming
 
 // Copy/Paste shortcuts for different systems
-#define C_COPY   LCTL(KC_C)   // Classical Copy (Ctrl + C)
-#define C_CUT    LCTL(KC_X)   // Classical Cut (Ctrl + X)
-#define C_PASTE  LCTL(KC_V)   // Classical Paste (Ctrl + V)
-#define I_COPY   LCTL(KC_INS) // Alternative Copy (Ctrl + Insert)
-#define I_CUT    LSFT(KC_DEL) // Alternative Cut (Shift + Delete)
-#define I_PASTE  LSFT(KC_INS) // Alternative Paste (Shift + Insert)
-#define L_COPY   LSCTL(KC_C)  // Linux Copy
-#define L_PASTE  LSCTL(KC_V)  // Linux Paste
+#define C_COPY   LCTL(KC_C)        // Classical Copy (Ctrl + C)
+#define C_CUT    LCTL(KC_X)        // Classical Cut (Ctrl + X)
+#define C_PASTE  LCTL(KC_V)        // Classical Paste (Ctrl + V)
+#define I_COPY   LCTL(KC_INS)      // Alternative Copy (Ctrl + Insert)
+#define I_CUT    LSFT(KC_DEL)      // Alternative Cut (Shift + Delete)
+#define I_PASTE  LSFT(KC_INS)      // Alternative Paste (Shift + Insert)
+#define L_COPY   LSCTL(KC_C)       // Linux Copy
+#define L_PASTE  LSCTL(KC_V)       // Linux Paste
+#define C_Alt_W  LCTL(LALT(KC_Z))  // Ctrl + Alt + Z (W on AZERTY)
 
 #define I_PCT    LSFT(KC_QUOT) // % Percent
 
@@ -405,8 +408,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* ┃    -    │    â    │    ê    │    î    │    ô    │   ``    ┃                       ┃    -    │   P1    │   P2    │   P3    │ PEnt  ⏎ │ RShft ⇧ ┃ */
        _______ ,  M_C_A  ,  M_C_E  ,  M_C_I  ,  M_C_O  , M_BQT   ,                         _______ ,  KC_P1  ,  KC_P2  ,  KC_P3  , KC_PENT , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃         │         │         │         │         ┃          ┃         ┃ ┃         ┃          ┃   P0    │    .    │         │         │         ┃ */
-       _______ , _______ , _______ , _______ , _______ ,            _______ ,   _______ ,             KC_P0  , KC_PDOT , _______ , _______ , _______ ,
+  /* ┃         │         │         │ Ctl + [ │ Ctl + ] ┃          ┃         ┃ ┃         ┃          ┃   P0    │    .    │         │         │         ┃ */
+       _______ , _______ , _______ , M_COSB  , M_CCSB  ,            _______ ,   _______ ,             KC_P0  , KC_PDOT , _______ , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━┛         ┃ ┃         ┗━━━━━━━━━━━━━━━━━━━┓                                          */
                                                 _______ , _______ , _______ ,   _______ , _______ , _______
@@ -432,7 +435,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        _______ , _______ , _______ , _______ , _______ ,            _______ ,   _______ ,            KC_SPC  , I_COPY  , I_PASTE , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━┛         ┃ ┃         ┗━━━━━━━━━━━━━━━━━━━┓                                          */
-                                                _______ , _______ , _______ ,   _______ , _______ , _______
+                                                _______ , _______ , C_Alt_W ,   _______ , _______ , _______
   /*                                          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛                                          */
     ),
 
@@ -524,7 +527,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 uint16_t rapid_fire_1 = 0;
 uint16_t rapid_fire_2 = 0;
 uint16_t rapid_fire_wait_counter = 0;
-uint16_t rapid_fire_wait_limit = 21;
+uint16_t rapid_fire_wait_limit = 120;
 
 void matrix_scan_user(void) {
     if (rapid_fire_1 || rapid_fire_2) {
@@ -541,24 +544,24 @@ void matrix_scan_user(void) {
         }
     }
     if (mouse_jiggle_active) {
-        if (timer_elapsed(mouse_jiggle_timer) > 5000) { // 5000ms = 5s
+        if (timer_elapsed(mouse_jiggle_timer) > 800) { // 800ms = 0.8s
             switch (mouse_jiggle_active) {
                 case 1: // N
                     tap_code(KC_MS_U);
-                    mouse_jiggle_active = 2; // Next direction: Est
+                    mouse_jiggle_active = 3;
                     break;
-                case 2: // E
-                    tap_code(KC_MS_R);
-                    mouse_jiggle_active = 3; // Next direction: Sud
-                    break;
+                // case 2: // E
+                //     tap_code(KC_MS_R);
+                //     mouse_jiggle_active = 3;
+                //     break;
                 case 3: // S
                     tap_code(KC_MS_D);
-                    mouse_jiggle_active = 4; // Next direction: Ouest
+                    mouse_jiggle_active = 1;
                     break;
-                case 4: // W
-                    tap_code(KC_MS_L);
-                    mouse_jiggle_active = 1; // Loop: back to North
-                    break;
+                // case 4: // W
+                //     tap_code(KC_MS_L);
+                //     mouse_jiggle_active = 1;
+                //     break;
             }
             mouse_jiggle_timer = timer_read();
         }
@@ -804,6 +807,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         case M_CSB: // ] Closing Square bracket
             SEND_STRING(SS_DOWN(X_RALT) SS_TAP(X_MINS) SS_UP(X_RALT));
+            return false;
+        case M_COSB: // [ Ctrl + Opening Square bracket
+            SEND_STRING(SS_DOWN(X_LCTL) SS_DOWN(X_RALT) \
+                SS_TAP(X_5) SS_UP(X_RALT) SS_UP(X_LCTL));
+            return false;
+        case M_CCSB: // ] Ctrl + Closing Square bracket
+            SEND_STRING(SS_DOWN(X_LCTL) SS_DOWN(X_RALT) \
+                SS_TAP(X_MINS) SS_UP(X_RALT) SS_UP(X_LCTL));
             return false;
         case M_ARB: // @ Arobase
             SEND_STRING(SS_DOWN(X_RALT) SS_TAP(X_0) SS_UP(X_RALT));
