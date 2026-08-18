@@ -1,14 +1,23 @@
-[English](STORY.md) · **Français** · [中文](STORY.zh.md) · [हिन्दी](STORY.hi.md) · [Español](STORY.es.md) · [العربية](STORY.ar.md) · [বাংলা](STORY.bn.md) · [Português](STORY.pt.md) · [Русский](STORY.ru.md) · [اردو](STORY.ur.md)
+[English](STORY.md) · **Français** · [中文](STORY.zh.md) · [हिन्दी](STORY.hi.md) · [Español](STORY.es.md) · [العربية](STORY.ar.md) · [বাংলা](STORY.bn.md) · [Português](STORY.pt.md) · [Русский](STORY.ru.md) · [اردو](STORY.ur.md) · [Bahasa Indonesia](STORY.id.md) · [Deutsch](STORY.de.md) · [日本語](STORY.ja.md) · [Naijá](STORY.pcm.md) · [मराठी](STORY.mr.md) · [తెలుగు](STORY.te.md) · [Türkçe](STORY.tr.md) · [粵語](STORY.yue.md) · [தமிழ்](STORY.ta.md) · [ਪੰਜਾਬੀ](STORY.pa.md)
 
 *Traduit avec l'aide de l'IA. Une erreur ? Les pull requests pour améliorer cette traduction sont les bienvenues.*
 
 # Tout ce que j'ai construit pour ce clavier
 
-Cette page raconte toute l'histoire : pas seulement ce que fait le keymap aujourd'hui, mais comment il en est arrivé là, commit après commit, au fil de mois de petits changements.
+Je suis Olivier Pons, développeur, et je tape du code, du français, de l'anglais, et maintenant de la voix, toute la journée. Ce keymap n'est pas une disposition téléchargée — il est né d'années de petits changements, commit après commit, pour coller exactement à ma façon de travailler, sous Linux, en AZERTY. Cette page raconte toute l'histoire : pourquoi il existe, et comment il en est arrivé là.
 
-## Partir d'une disposition vierge
+## Le problème
 
-Je ne voulais pas d'un Moonlander avec une disposition standard. Je voulais de l'AZERTY — ma disposition native — reconstruite de zéro pour la programmation : les symboles à portée de main, sans gymnastique de couches à mémoriser pour `{`, `[`, `|`. La première version fonctionnelle est la base sur laquelle je construis encore aujourd'hui.
+L'AZERTY a été conçu pour les machines à écrire, pas pour les développeurs. Crochets et opérateurs se cachent derrière des combinaisons peu pratiques, et jongler toute la journée entre français et code crée une friction constante. Plutôt que de lutter contre la disposition, j'ai construit des couches autour d'elle.
+
+## Les couches
+
+- **L0** : AZERTY de base, proche de ce que mes mains connaissent déjà.
+- **L1** : tous les symboles dont un développeur a besoin, sans quitter la ligne de base.
+- **L2** : pavé numérique et caractères accentués français.
+- **L3** : copier/coller et raccourcis spécifiques à l'OS, car Linux, Windows et macOS ne sont jamais d'accord.
+- **L4/L5** : éclairage RGB et sons, pour savoir sur quelle couche je suis sans regarder.
+- **L6** : transforme le clavier en manette de jeu.
 
 ## Garder l'écran éveillé
 
@@ -34,10 +43,10 @@ QMK déprécie ses keycodes au fil du temps. Quand les keycodes `RGB_*` et souri
 
 La pièce la plus récente : Ctrl+Alt+K active [opons-voxd](https://github.com/olivierpons/opons-voxd), un outil de dictée vocale open source que j'ai construit séparément. C'est la première touche de ce clavier qui ne déplace pas juste du texte — elle se met à écouter.
 
-## L'écrire noir sur blanc
+## Pourquoi je partage ça
 
-Ce keymap a dépassé le stade du simple fichier de config depuis un moment. Il a un comportement qui mérite d'être expliqué, et je voulais que cette explication touche plus de monde que les seuls lecteurs anglophones ou francophones — d'où cette page, et la page plus courte [ABOUT](ABOUT.fr.md), toutes deux traduites. Le keymap complet et les instructions de compilation se trouvent un niveau au-dessus, dans [le README du keymap](../README.md).
+Personne ne devrait copier ça tel quel — chaque main et chaque façon de travailler diffèrent. Mais l'idée — des couches pour les symboles, les raccourcis OS, le retour visuel, les macros, et maintenant la voix — pourrait faire gagner à quelqu'un d'autre les années que ça m'a pris. Le keymap complet et les instructions de compilation se trouvent un niveau au-dessus, dans [le README du keymap](../README.md).
 
 ---
 
-> Traduit dans les 10 langues les plus parlées au monde ; les corrections via pull request sont les bienvenues.
+> Traduit dans les 20 langues les plus parlées au monde ; les corrections via pull request sont les bienvenues.

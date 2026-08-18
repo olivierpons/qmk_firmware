@@ -1,14 +1,23 @@
-[English](STORY.md) · [Français](STORY.fr.md) · [中文](STORY.zh.md) · [हिन्दी](STORY.hi.md) · **Español** · [العربية](STORY.ar.md) · [বাংলা](STORY.bn.md) · [Português](STORY.pt.md) · [Русский](STORY.ru.md) · [اردو](STORY.ur.md)
+[English](STORY.md) · [Français](STORY.fr.md) · [中文](STORY.zh.md) · [हिन्दी](STORY.hi.md) · **Español** · [العربية](STORY.ar.md) · [বাংলা](STORY.bn.md) · [Português](STORY.pt.md) · [Русский](STORY.ru.md) · [اردو](STORY.ur.md) · [Bahasa Indonesia](STORY.id.md) · [Deutsch](STORY.de.md) · [日本語](STORY.ja.md) · [Naijá](STORY.pcm.md) · [मराठी](STORY.mr.md) · [తెలుగు](STORY.te.md) · [Türkçe](STORY.tr.md) · [粵語](STORY.yue.md) · [தமிழ்](STORY.ta.md) · [ਪੰਜਾਬੀ](STORY.pa.md)
 
 *Traducido con ayuda de IA. ¿Encontraste un error? Los pull requests para mejorar esta traducción son bienvenidos.*
 
 # Todo lo que construí para este teclado
 
-Esta página cuenta la historia completa: no solo lo que hace el keymap hoy, sino cómo llegó hasta aquí, commit a commit, a lo largo de meses de pequeños cambios.
+Soy Olivier Pons, desarrollador, y escribo código, francés, inglés y ahora voz, todo el día. Este keymap no es una disposición descargada: nació de años de pequeños cambios, commit a commit, para adaptarse exactamente a mi forma de trabajar, en Linux, con AZERTY. Esta página cuenta la historia completa: por qué existe y cómo llegó hasta aquí.
 
-## Partir de una disposición en blanco
+## El problema
 
-No quería un Moonlander con una disposición estándar. Quería AZERTY —mi disposición nativa— reconstruida desde cero para programar: símbolos al alcance de la mano, sin gimnasia de capas que memorizar para `{`, `[`, `|`. La primera versión funcional es la base sobre la que sigo construyendo hoy.
+AZERTY fue diseñado para máquinas de escribir, no para programadores. Los corchetes y operadores están detrás de combinaciones incómodas, y alternar todo el día entre francés y código crea fricción constante. En lugar de luchar contra la disposición, construí capas alrededor de ella.
+
+## Las capas
+
+- **L0**: AZERTY base, cercano a lo que mis manos ya conocen.
+- **L1**: todos los símbolos que necesita un programador, sin salir de la fila base.
+- **L2**: teclado numérico y caracteres acentuados del francés.
+- **L3**: copiar/pegar y atajos específicos del sistema operativo, porque Linux, Windows y macOS nunca se ponen de acuerdo.
+- **L4/L5**: iluminación RGB y sonido, para saber en qué capa estoy sin mirar.
+- **L6**: convierte el teclado en un mando de videojuegos.
 
 ## Mantener la pantalla despierta
 
@@ -34,10 +43,10 @@ QMK va dejando obsoletos sus keycodes con el tiempo. Cuando los keycodes `RGB_*`
 
 Lo más reciente: Ctrl+Alt+K activa [opons-voxd](https://github.com/olivierpons/opons-voxd), una herramienta de dictado por voz de código abierto que construí por separado. Es la primera tecla de este teclado que no solo mueve texto, sino que empieza a escuchar.
 
-## Ponerlo por escrito
+## Por qué comparto esto
 
-Este keymap hace tiempo que dejó de ser solo un archivo de configuración. Tiene un comportamiento que merece explicación, y quería que esa explicación llegara a más gente que solo a lectores de inglés o francés —de ahí esta página, y la más corta [ABOUT](ABOUT.es.md), ambas traducidas. El keymap completo y las instrucciones de compilación están un nivel más arriba, en [el README del keymap](../README.md).
+Nadie debería copiar esto tal cual: cada mano y cada forma de trabajar son diferentes. Pero la idea —capas para símbolos, atajos del sistema, retroalimentación, macros y ahora voz— podría ahorrarle a alguien los años que a mí me costó llegar aquí. El keymap completo y las instrucciones de compilación están un nivel más arriba, en [el README del keymap](../README.md).
 
 ---
 
-> Traducido a los 10 idiomas más usados del mundo; las correcciones mediante pull request son bienvenidas.
+> Traducido a los 20 idiomas más usados del mundo; las correcciones mediante pull request son bienvenidas.
