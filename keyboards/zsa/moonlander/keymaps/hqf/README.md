@@ -4,9 +4,13 @@ A feature-rich AZERTY keymap for the ZSA Moonlander keyboard, optimized for
 development work across different operating systems, with special
 optimizations for Linux.
 
-**The story behind this keymap** — why it exists and how it's actually used
-day to day — is in [docs/ABOUT.md](docs/ABOUT.md), also available in 19
-other languages (language switcher at the top of that page).
+**Why it exists and how it's actually used day to day** — a short read — is
+in [docs/ABOUT.md](docs/ABOUT.md), also available in 19 other languages
+(language switcher at the top of that page).
+
+**The full development story** — every feature, why it was built, commit by
+commit — is in [docs/STORY.md](docs/STORY.md), also available in 9 other
+languages (language switcher at the top of that page).
 
 ## Layout Overview
 
