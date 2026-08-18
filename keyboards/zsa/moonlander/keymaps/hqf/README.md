@@ -113,6 +113,10 @@ Tested on:
 3. Test thoroughly
 4. Submit a pull request
 
+## Related Projects
+
+- [opons-voxd](https://github.com/olivierpons/opons-voxd) - Open source voice dictation tool, toggled from this keymap via Ctrl+Alt+K
+
 ## Support
 
 - [QMK Documentation](https://docs.qmk.fm/)

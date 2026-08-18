@@ -275,7 +275,7 @@ enum custom_keycodes {
 #define L_COPY   LSCTL(KC_C)       // Linux Copy
 #define L_PASTE  LSCTL(KC_V)       // Linux Paste
 #define C_Alt_W  LCTL(LALT(KC_Z))  // Ctrl + Alt + Z (W on AZERTY)
-#define C_Alt_K  LCTL(LALT(KC_K))  // Ctrl + Alt + K
+#define C_Alt_K  LCTL(LALT(KC_K))  // Ctrl + Alt + K, toggles opons-voxd voice dictation: https://github.com/olivierpons/opons-voxd
 
 #define I_PCT    LSFT(KC_QUOT) // % Percent
 
