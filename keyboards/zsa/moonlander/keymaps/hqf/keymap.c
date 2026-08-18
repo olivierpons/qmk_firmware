@@ -275,6 +275,7 @@ enum custom_keycodes {
 #define L_COPY   LSCTL(KC_C)       // Linux Copy
 #define L_PASTE  LSCTL(KC_V)       // Linux Paste
 #define C_Alt_W  LCTL(LALT(KC_Z))  // Ctrl + Alt + Z (W on AZERTY)
+#define C_Alt_K  LCTL(LALT(KC_K))  // Ctrl + Alt + K
 
 #define I_PCT    LSFT(KC_QUOT) // % Percent
 
@@ -389,7 +390,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        M_JIG_ON, _______ , _______ , _______ , _______ ,            _______ ,   _______ ,            KC_SPC  , _______ , _______ , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━┛         ┃ ┃         ┗━━━━━━━━━━━━━━━━━━━┓                                          */
-                                                _______ , _______ , _______ ,   _______ , _______ , _______
+                                                _______ , _______ , _______ ,   C_Alt_K , _______ , _______
   /*                                          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛                                          */
     ),
 
