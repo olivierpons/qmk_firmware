@@ -39,6 +39,16 @@
     "company.com"
 
 /**
+ * Short Sentence Definitions
+ * ------------------------
+ * SENTENCE_1: Short sentence sent by M_STCE_1
+ * SENTENCE_2: Short sentence sent by M_STCE_2
+ */
+#define SENTENCE_1 "\nThanks!\n"
+
+#define SENTENCE_2 "\nBest regards\n"
+
+/**
  * Custom Sound Definition
  * ---------------------
  * Define your own melody using note macros:
@@ -75,4 +85,7 @@
  * Define your own keyboard shortcuts
  */
 #define CUSTOM_SHORTCUT_1 SS_DOWN(X_LCTL) SS_DOWN(X_LALT) \
-    SS_TAP(X_1) SS_UP(X_LALT) SS_
+    SS_TAP(X_1) SS_UP(X_LALT) SS_UP(X_LCTL)
+
+#define CUSTOM_SHORTCUT_2 SS_DOWN(X_LSFT) SS_DOWN(X_LCTL) \
+    SS_TAP(X_1) SS_UP(X_LCTL) SS_UP(X_LSFT)
