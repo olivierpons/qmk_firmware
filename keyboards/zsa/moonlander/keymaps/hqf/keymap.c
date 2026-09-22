@@ -518,6 +518,51 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 };
 
+/**
+ * Music mode (MU_ON): 40 consecutive semitones on the three middle rows.
+ *
+ * Neither music_map nor music_on_user() is referenced in this file: QMK uses
+ * them itself.
+ * - music_map: read by process_music() in
+ *   quantum/process_keycode/process_music.c on every key event while music mode
+ *   is on, to pick the note of the key. It overrides the weak default of
+ *   keyboards/zsa/moonlander/moonlander.c.
+ * - music_on_user(): called by music_on() in the same file, i.e. when MU_ON is
+ *   pressed, or MU_TOGG while music mode is off.
+ *
+ * Value = semitones above C3 (130.8 Hz): bottom row 0-11, home row 12-25, top
+ * letter row 26-39 (D#6, 1244.5 Hz). Each row rises from the left hand to the
+ * right hand. Every other key plays C3 (value 0). Rows 0-5 = left half, rows
+ * 6-11 = right half; columns run left to right.
+ *
+ * Usage: tap TD(TD_RF) -> L4, press MU_ON (I), tap TD(TD_RF) again -> back to
+ * L0, play. Stop: L4, MU_OFF (K). Silence everywhere: audio is off -> L4, AU_ON
+ * (U).
+ */
+const uint8_t music_map[MATRIX_ROWS][MATRIX_COLS] = {
+    { 0,  0,  0,  0,  0,  0,  0},
+    {26, 27, 28, 29, 30, 31, 32},
+    {12, 13, 14, 15, 16, 17, 18},
+    { 0,  1,  2,  3,  4,  5,  0},
+    { 0,  0,  0,  0,  0,  0,  0},
+    { 0,  0,  0,  0,  0,  0,  0},
+    { 0,  0,  0,  0,  0,  0,  0},
+    {33, 34, 35, 36, 37, 38, 39},
+    {19, 20, 21, 22, 23, 24, 25},
+    { 0,  6,  7,  8,  9, 10, 11},
+    { 0,  0,  0,  0,  0,  0,  0},
+    { 0,  0,  0,  0,  0,  0,  0}
+};
+
+extern uint8_t music_mode;
+extern int     music_offset;
+
+// Chromatic mode with a zero offset: note = 48 (C3) + music_map value.
+void music_on_user(void) {
+    music_mode   = MUSIC_MODE_CHROMATIC;
+    music_offset = 0;
+}
+
 uint16_t rapid_fire_1 = 0;
 uint16_t rapid_fire_2 = 0;
 uint16_t rapid_fire_wait_counter = 0;
