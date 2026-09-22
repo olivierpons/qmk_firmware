@@ -16,6 +16,28 @@
  */
 
 /**
+ * HQF: AZERTY Moonlander keymap, Linux first. What it does, at a glance:
+ *
+ * L0 AZERTY. Right thumbs: &nbsp; (M_NBSP), <tag></tag> around word (M_ATG).
+ * L1 (hold MO(L_1)): F1-F12, \ { } ~ | / @ < > [ ] # %, arrows, word jumps,
+ *    Home/End/PgUp/PgDn, 2 emails, mouse jiggler on/off, Ctrl+Alt+K dictation.
+ * L2 (hold MO(L_2)): numpad, Caps/Num Lock, â ê î ô û ù ``, 2 signatures,
+ *    Linux desktop left/right/maximize, Ctrl+[ Ctrl+].
+ * L3 (hold MO(L_3)): copy/cut/paste as Ctrl+C/V, Ctrl+Shift+C/V, Ctrl+Ins/
+ *    Shift+Ins, 2 sentences, arrows, F1-F12, Ctrl+Alt+W.
+ * L4 (tap TD(TD_RF)): RGB on/off/effect/hue/sat/value, audio on/off (U/J),
+ *    music mode on/off (I/K), typing beep on/off/pitch (O/L).
+ * L5 (Goto L5 key): 40 melodies, one per key.
+ * L6 (double tap TD(TD_RF)): gaming, rapid fire mouse 1/2/both and space,
+ *    rapid fire speed up/down. Triple tap TD(TD_RF): USSR anthem.
+ *
+ * Music mode: tap TD(TD_RF) -> L4, press MU_ON (I), tap TD(TD_RF) again -> L0,
+ * play the three middle rows (40 notes, low to high). Stop: L4, MU_OFF (K).
+ * No sound at all: audio is off -> L4, AU_ON (U).
+ * Personal strings (signatures, emails, sentences): config.local.h.
+ */
+
+/**
  * MACRO DOCUMENTATION
  * ------------------
  * This keymap supports several types of customizable macros:
