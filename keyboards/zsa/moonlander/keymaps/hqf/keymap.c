@@ -18,7 +18,8 @@
 /**
  * HQF: AZERTY Moonlander keymap, Linux first. What it does, at a glance:
  *
- * L0 AZERTY. Right thumbs: &nbsp; (M_NBSP), <tag></tag> around word (M_ATG).
+ * L0 AZERTY. Right thumbs: &nbsp; (M_NBSP), <tag></tag> around word (tap
+ *    TD(TD_ATG); triple tap TD(TD_ATG): Syntax Terror intro theme).
  * L1 (hold MO(L_1)): F1-F12, \ { } ~ | / @ < > [ ] # %, arrows, word jumps,
  *    Home/End/PgUp/PgDn, 2 emails, mouse jiggler on/off, Ctrl+Alt+K dictation.
  * L2 (hold MO(L_2)): numpad, Caps/Num Lock, â ê î ô û ù ``, 2 signatures,
@@ -139,7 +140,8 @@ typedef struct {
 } td_tap_t;
 
 enum {
-    TD_RF, // TD_RF = Tap Dance Rapid Fire toggle
+    TD_RF,  // TD_RF = Tap Dance Rapid Fire toggle
+    TD_ATG, // TD_ATG = Tap Dance tag helper, triple tap plays the intro theme
 };
 
 // Function associated with all tap dances
@@ -148,6 +150,11 @@ td_state_t cur_dance(tap_dance_state_t *state);
 // Functions associated with individual tap dances
 void ql_finished(tap_dance_state_t *state, void *user_data);
 void ql_reset(tap_dance_state_t *state, void *user_data);
+void atg_finished(tap_dance_state_t *state, void *user_data);
+void atg_reset(tap_dance_state_t *state, void *user_data);
+
+// Shared by the M_ATG keycode and by the TD_ATG tap dance
+void send_advanced_tag(void);
 
 /**
  * Layer Definitions
@@ -366,6 +373,20 @@ float workman_sound          [][2] = SONG(WORKMAN_SOUND);
 float tos_hymn_risen         [][2] = SONG(TOS_HYMN_RISEN);
 float custom_sound           [][2] = SONG(B__NOTE(_G6), B__NOTE(_C7), W__NOTE(_G6), H__NOTE(_A6), B__NOTE(_B6), W__NOTE(_E6), W__NOTE(_E6), B__NOTE(_A6), W__NOTE(_G6), H__NOTE(_F6), B__NOTE(_G6), W__NOTE(_C6), W__NOTE(_C6), B__NOTE(_D6), W__NOTE(_D6), W__NOTE(_E6), B__NOTE(_D6), W__NOTE(_D6), W__NOTE(_G6), B__NOTE(_F6), W__NOTE(_G6), W__NOTE(_A6), B__NOTE(_B6),);
 
+/**
+ * Melody voice of the Syntax Terror intro theme, one phrase of 6.40 s.
+ *
+ * Durations are in QMK's unit of 1/64th of a beat, which audio_duration_to_ms()
+ * turns into duration * 1875 / (tempo * 2) ms; at the default tempo of 120 that
+ * unit is 7.8125 ms, so the 0.2 s eighth note of this theme is 26 units and the
+ * named macros (E__NOTE, Q__NOTE...) cannot land on that grid.
+ */
+float syntax_terror_intro    [][2] = SONG(
+    M__NOTE(_C5, 26), M__NOTE(_C5, 26), M__NOTE(_AS4, 51), M__NOTE(_G4, 51),
+    M__NOTE(_AS4, 51), M__NOTE(_C5, 51), M__NOTE(_AS4, 51), M__NOTE(_G4, 102),
+    M__NOTE(_C5, 51), M__NOTE(_AS4, 26), M__NOTE(_AS4, 26), M__NOTE(_G4, 51),
+    M__NOTE(_AS4, 51), M__NOTE(_C5, 51), M__NOTE(_AS4, 154));
+
 uint8_t mouse_jiggle_active = 0; // 0 = inactive, 1-4 = directions N/E/S/W
 uint16_t mouse_jiggle_timer = 0;
 
@@ -386,7 +407,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        KC_LSFT ,  KC_Z   ,  KC_X   ,  KC_C   ,  KC_V   ,  KC_B   ,                          KC_N   ,  KC_M   , KC_COMM , KC_DOT  , KC_SLSH , KC_RSFT,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃  LCtl   │         │   LAlt  │   Del   │   Del   ┃          ┃ Goto L4 ┃ ┃  <> </> ┃          ┃   Spc   │   RSft  │   RAlt  │   RGui  │   RCtl  ┃ */
-       KC_LCTL , KC_MEH  , KC_LALT , KC_DEL  , KC_DEL  ,           TD(TD_RF),    M_ATG  ,            KC_SPC  , KC_RSFT , KC_RALT , KC_RGUI , KC_RCTL ,
+       KC_LCTL , KC_MEH  , KC_LALT , KC_DEL  , KC_DEL  ,           TD(TD_RF),  TD(TD_ATG),           KC_SPC  , KC_RSFT , KC_RALT , KC_RGUI , KC_RCTL ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━╃─────────┨ ┠─────────╄━━━━━━━━━┯━━━━━━━━━┓                                          */
   /*                                          ┃   ~L3   │   ~L2   │  Lgui   ┃ ┃  Nbsp   │   ~L2   │  ~L1    ┃                                          */
@@ -531,7 +552,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        _______ ,  KC_Z   ,  KC_X   ,  KC_C   ,  KC_V   ,  KC_B   ,                          KC_N   ,  KC_M   , KC_COMM , KC_DOT  , KC_SLSH , KC_RSFT,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃  LCtl   │         │   LAlt  │   Del   │   Del   ┃          ┃ Goto L4 ┃ ┃  <> </> ┃          ┃   Spc   │   RSft  │   RAlt  │   RGui  │   RCtl  ┃ */
-       KC_LCTL , KC_MEH  , KC_LALT , KC_DEL  , KC_DEL  ,           TD(TD_RF),    M_ATG  ,            RF_SPACE, KC_RSFT , KC_RALT , KC_RGUI , KC_RCTL ,
+       KC_LCTL , KC_MEH  , KC_LALT , KC_DEL  , KC_DEL  ,           TD(TD_RF),  TD(TD_ATG),           RF_SPACE, KC_RSFT , KC_RALT , KC_RGUI , KC_RCTL ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━╃─────────┨ ┠─────────╄━━━━━━━━━┯━━━━━━━━━┓                                          */
   /*                                          ┃ RapidF3 │ RapidF1 │ RapidF2 ┃ ┃  Nbsp   │   ~L2   │  ~L1    ┃                                          */
@@ -629,6 +650,27 @@ void matrix_scan_user(void) {
     }
 }
 
+/**
+ * Wraps the word left of the caret in an HTML tag and leaves the caret between
+ * the opening and the closing tag: cuts the word, types <word></word>, then
+ * walks back over the closing tag. Called by the M_ATG keycode and by the tag
+ * tap dance, which both send the same keystrokes.
+ */
+void send_advanced_tag(void) {
+    SEND_STRING( \
+        SS_DOWN(X_RCTL) SS_DOWN(X_LSFT) SS_TAP(X_LEFT) SS_UP(X_LSFT) \
+        SS_TAP(X_X) SS_UP(X_RCTL) \
+        SS_TAP(X_NUBS) \
+        SS_DOWN(X_RCTL) SS_TAP(X_V) SS_UP(X_RCTL) \
+        SS_DOWN(X_RSFT) SS_TAP(X_NUBS) SS_UP(X_RSFT) \
+        SS_TAP(X_NUBS) \
+        SS_DOWN(X_RSFT) SS_TAP(X_DOT) SS_UP(X_RSFT) \
+        SS_DOWN(X_RCTL) SS_TAP(X_V) SS_UP(X_RCTL) \
+        SS_DOWN(X_RSFT) SS_TAP(X_NUBS) SS_UP(X_RSFT) \
+        SS_TAP(X_LEFT)SS_DOWN(X_RCTL) SS_TAP(X_LEFT) SS_UP(X_RCTL) \
+        SS_TAP(X_LEFT) SS_TAP(X_LEFT));
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (record->event.pressed) {
@@ -679,18 +721,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             SEND_STRING (QMK_KEYBOARD "/" QMK_KEYMAP " @ " QMK_VERSION);
             return false;
         case M_ATG: // Advanced tag <></>
-             SEND_STRING( \
-                SS_DOWN(X_RCTL) SS_DOWN(X_LSFT) SS_TAP(X_LEFT) SS_UP(X_LSFT) \
-                SS_TAP(X_X) SS_UP(X_RCTL) \
-                SS_TAP(X_NUBS) \
-                SS_DOWN(X_RCTL) SS_TAP(X_V) SS_UP(X_RCTL) \
-                SS_DOWN(X_RSFT) SS_TAP(X_NUBS) SS_UP(X_RSFT) \
-                SS_TAP(X_NUBS) \
-                SS_DOWN(X_RSFT) SS_TAP(X_DOT) SS_UP(X_RSFT) \
-                SS_DOWN(X_RCTL) SS_TAP(X_V) SS_UP(X_RCTL) \
-                SS_DOWN(X_RSFT) SS_TAP(X_NUBS) SS_UP(X_RSFT) \
-                SS_TAP(X_LEFT)SS_DOWN(X_RCTL) SS_TAP(X_LEFT) SS_UP(X_RCTL) \
-                SS_TAP(X_LEFT) SS_TAP(X_LEFT));
+             send_advanced_tag();
              return false;
         case M_SOUND00:
             PLAY_SONG(ode_to_joy);
@@ -1002,8 +1033,46 @@ void ql_reset(tap_dance_state_t *state, void *user_data) {
     ql_tap_state.state = TD_NONE;
 }
 
-// Associate our tap dance key with its functionality
+// Initialize tap structure associated with the tag tap dance key
+static td_tap_t atg_tap_state = {
+    .is_press_action = true,
+    .state = TD_NONE
+};
+
+/**
+ * Right thumb red key, mirror of the TD_RF key on the left: one tap wraps the
+ * word in a tag, two taps wrap two words in a row, three taps play the Syntax
+ * Terror intro theme. QMK calls this from the tap dance engine once the tap
+ * count is settled, that is TAPPING_TERM after the last tap, so the tag now
+ * waits 200 ms instead of firing on the key press.
+ */
+void atg_finished(tap_dance_state_t *state, void *user_data) {
+    atg_tap_state.state = cur_dance(state);
+    switch (atg_tap_state.state) {
+        case TD_SINGLE_TAP:
+            send_advanced_tag();
+            break;
+        case TD_SINGLE_HOLD:
+            break;
+        case TD_DOUBLE_TAP:
+            send_advanced_tag();
+            send_advanced_tag();
+            break;
+        case TD_TRIPLE_TAP:
+            PLAY_SONG(syntax_terror_intro);
+            break;
+        default:
+            break;
+    }
+}
+
+void atg_reset(tap_dance_state_t *state, void *user_data) {
+    atg_tap_state.state = TD_NONE;
+}
+
+// Associate our tap dance keys with their functionality
 tap_dance_action_t tap_dance_actions[] = {
-    [TD_RF] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, ql_finished, ql_reset)
+    [TD_RF] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, ql_finished, ql_reset),
+    [TD_ATG] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, atg_finished, atg_reset)
 };
 
