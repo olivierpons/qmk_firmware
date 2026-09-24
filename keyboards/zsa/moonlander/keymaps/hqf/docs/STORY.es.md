@@ -21,7 +21,7 @@ AZERTY fue diseñado para máquinas de escribir, no para programadores. Los corc
 
 ## Mantener la pantalla despierta
 
-Muy pronto añadí una macro de jiggle de ratón, para que la máquina no se bloquee ni entre en reposo durante una llamada larga o una lectura larga. Al principio el cursor solo se movía un poco cada 800 ms; ahora recorre un círculo píxel a píxel. `M_JG_ON` / `M_JG_OFF` lo inician y lo detienen, `M_JG_RUP` / `M_JG_RDN` agrandan y reducen el radio (10 píxeles por defecto, hasta un solo píxel, que aún mueve el ratón), `M_JG_DUP` / `M_JG_DDN` alargan y acortan en una décima de segundo la pausa entre dos píxeles (2 segundos por defecto), y `M_JG_CLK` activa o desactiva un clic izquierdo cada vez que el cursor llega abajo a la derecha del círculo, con un pitido muy agudo al activarlo y uno muy grave al desactivarlo.
+Muy pronto añadí una macro de jiggle de ratón, para que la máquina no se bloquee ni entre en reposo durante una llamada larga o una lectura larga. Al principio el cursor solo se movía un poco cada 800 ms; ahora recorre un círculo píxel a píxel. `M_JG_TOG` lo inicia y lo detiene, `M_JG_RUP` / `M_JG_RDN` agrandan y reducen el radio (10 píxeles por defecto, hasta un solo píxel, que aún mueve el ratón), `M_JG_DUP` / `M_JG_DDN` alargan y acortan en una décima de segundo la pausa entre dos píxeles (2 segundos por defecto), y `M_JG_CLK` activa o desactiva un clic izquierdo cada vez que el cursor llega abajo a la derecha del círculo, con un pitido muy agudo al activarlo y uno muy grave al desactivarlo.
 
 ## Convertir el teclado en un mando
 

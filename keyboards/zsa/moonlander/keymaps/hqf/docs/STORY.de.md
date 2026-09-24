@@ -21,7 +21,7 @@ AZERTY wurde für Schreibmaschinen entworfen, nicht für Programmierer. Klammern
 
 ## Den Bildschirm wach halten
 
-Früh habe ich ein Mausbewegungs-Makro hinzugefügt, damit der Rechner während eines langen Anrufs oder einer langen Lektüre nicht sperrt oder in den Ruhezustand geht. Anfangs bewegte sich der Cursor nur alle 800 ms ein wenig; heute folgt er Pixel für Pixel einem Kreis. `M_JG_ON` / `M_JG_OFF` starten und stoppen ihn, `M_JG_RUP` / `M_JG_RDN` vergrößern und verkleinern den Radius (standardmäßig 10 Pixel, bis hinunter zu einem einzigen Pixel, das die Maus immer noch bewegt), `M_JG_DUP` / `M_JG_DDN` verlängern und verkürzen die Pause zwischen zwei Pixeln um eine Zehntelsekunde (standardmäßig 2 Sekunden), und `M_JG_CLK` schaltet einen Linksklick ein oder aus, der jedes Mal ausgelöst wird, wenn der Cursor unten rechts auf dem Kreis ankommt, mit einem sehr hohen Piepton für ein und einem sehr tiefen für aus.
+Früh habe ich ein Mausbewegungs-Makro hinzugefügt, damit der Rechner während eines langen Anrufs oder einer langen Lektüre nicht sperrt oder in den Ruhezustand geht. Anfangs bewegte sich der Cursor nur alle 800 ms ein wenig; heute folgt er Pixel für Pixel einem Kreis. `M_JG_TOG` startet und stoppt ihn, `M_JG_RUP` / `M_JG_RDN` vergrößern und verkleinern den Radius (standardmäßig 10 Pixel, bis hinunter zu einem einzigen Pixel, das die Maus immer noch bewegt), `M_JG_DUP` / `M_JG_DDN` verlängern und verkürzen die Pause zwischen zwei Pixeln um eine Zehntelsekunde (standardmäßig 2 Sekunden), und `M_JG_CLK` schaltet einen Linksklick ein oder aus, der jedes Mal ausgelöst wird, wenn der Cursor unten rechts auf dem Kreis ankommt, mit einem sehr hohen Piepton für ein und einem sehr tiefen für aus.
 
 ## Die Tastatur in einen Controller verwandeln
 
