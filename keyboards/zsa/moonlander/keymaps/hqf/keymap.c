@@ -409,7 +409,8 @@ float jiggle_click_off_sound [][2] = SONG(Q__NOTE(_E4));
  * Each step goes to the neighbour pixel (8-connected) along the tangent that
  * stays closest to x^2 + y^2 = r^2, so the cursor follows every pixel of the
  * circle and a full turn adds up to no move at all. With a radius of 900, a
- * turn is about 5100 steps, i.e. about 5 s.
+ * turn is about 5100 steps, i.e. about 5 s. The smallest radius, 1, still moves
+ * the cursor: 8 one-pixel steps around the center.
  *
  * Distances are mouse counts: they are screen pixels only when the OS pointer
  * acceleration is flat with a speed of 1, otherwise the OS scales the circle. A
@@ -422,9 +423,8 @@ float jiggle_click_off_sound [][2] = SONG(Q__NOTE(_E4));
  */
 #define JIGGLE_STEP_MS        1
 #define JIGGLE_RADIUS_DEFAULT 900
-#define JIGGLE_RADIUS_MIN     100
+#define JIGGLE_RADIUS_MIN     1
 #define JIGGLE_RADIUS_MAX     2000
-#define JIGGLE_RADIUS_STEP    100
 
 bool     jiggle_active = false;
 bool     jiggle_click  = false;
@@ -719,6 +719,16 @@ static void jiggle_step(void) {
         jiggle_report(0, 0, MOUSE_BTN1);
         jiggle_report(0, 0, 0);
     }
+}
+
+/**
+ * Radius change of one M_JIGRUP / M_JIGRDN press: 100 from 100 up, 10 from 10
+ * up, 1 below, so the radius goes 900 ... 100, 90 ... 10, 9 ... 1 and back up
+ * through the same values.
+ */
+static int16_t jiggle_radius_step(bool up) {
+    int16_t floor = up ? jiggle_radius : jiggle_radius - 1;
+    return floor >= 100 ? 100 : (floor >= 10 ? 10 : 1);
 }
 
 // Scales the cursor offset to the new radius, i.e. moves it along its radius.
@@ -1070,14 +1080,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         case M_JIGRUP:
             if (jiggle_radius < JIGGLE_RADIUS_MAX) {
-                jiggle_set_radius(jiggle_radius + JIGGLE_RADIUS_STEP);
+                jiggle_set_radius(jiggle_radius + jiggle_radius_step(true));
             } else {
                 PLAY_SONG(dvorak_sound);
             }
             return false;
         case M_JIGRDN:
             if (jiggle_radius > JIGGLE_RADIUS_MIN) {
-                jiggle_set_radius(jiggle_radius - JIGGLE_RADIUS_STEP);
+                jiggle_set_radius(jiggle_radius - jiggle_radius_step(false));
             } else {
                 PLAY_SONG(colemak_sound);
             }
