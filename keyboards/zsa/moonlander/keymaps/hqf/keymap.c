@@ -22,8 +22,8 @@
  *    TD(TD_ATG); triple tap TD(TD_ATG): Syntax Terror intro theme).
  * L1 (hold MO(L_1)): F1-F12, \ { } ~ | / @ < > [ ] # %, arrows, word jumps,
  *    Home/End/PgUp/PgDn, 2 emails, Ctrl+Alt+K dictation, circle mouse jiggler
- *    (left thumbs: radius +/-, on; left red key: click at bottom right; right
- *    thumb next to Ctrl+Alt+K: on; right red key: off).
+ *    (left thumbs: radius +/-, click off; left red key: click on; bottom left
+ *    keys: delay -/+; right thumb next to Ctrl+Alt+K: on; right red key: off).
  * L2 (hold MO(L_2)): numpad, Caps/Num Lock, â ê î ô û ù ``, 2 signatures,
  *    Linux desktop left/right/maximize, Ctrl+[ Ctrl+].
  * L3 (hold MO(L_3)): copy/cut/paste as Ctrl+C/V, Ctrl+Shift+C/V, Ctrl+Ins/
@@ -283,7 +283,10 @@ enum custom_keycodes {
     M_JIGOFF,
     M_JIGRUP,
     M_JIGRDN,
-    M_JIGCLK,
+    M_JG_CON,
+    M_JG_COF,
+    M_JG_DUP,
+    M_JG_DDN,
 };
 
 // Key combination defines for better readability
@@ -400,35 +403,42 @@ float jiggle_click_on_sound  [][2] = SONG(Q__NOTE(_E6));
 float jiggle_click_off_sound [][2] = SONG(Q__NOTE(_E4));
 
 /**
- * Mouse jiggler: the cursor runs clockwise around a circle, at most one pixel
- * every JIGGLE_STEP_MS, starting from its rightmost point. The center is where
- * the cursor stood when M_JIG_ON was pressed, and M_JIGOFF brings the cursor
- * back there. M_JIGRUP / M_JIGRDN change the radius, also while it runs: the
- * cursor then moves along its radius to the new circle.
+ * Mouse jiggler: the cursor runs clockwise around a circle, one pixel every
+ * jiggle_delay ms, starting from its rightmost point. The center is where the
+ * cursor stood when M_JIG_ON was pressed, and M_JIGOFF brings the cursor back
+ * there. M_JIGRUP / M_JIGRDN change the radius, also while it runs: the cursor
+ * then moves along its radius to the new circle. M_JG_DUP / M_JG_DDN lengthen /
+ * shorten the delay.
  *
  * Each step goes to the neighbour pixel (8-connected) along the tangent that
  * stays closest to x^2 + y^2 = r^2, so the cursor follows every pixel of the
- * circle and a full turn adds up to no move at all. With a radius of 900, a
- * turn is about 5100 steps, i.e. about 5 s. The smallest radius, 1, still moves
- * the cursor: 8 one-pixel steps around the center.
+ * circle and a full turn adds up to no move at all. With the default radius of
+ * 10, a turn is 56 steps, i.e. 112 s at the default delay of 2 s. The smallest
+ * radius, 1, still moves the cursor: 8 one-pixel steps around the center.
  *
  * Distances are mouse counts: they are screen pixels only when the OS pointer
  * acceleration is flat with a speed of 1, otherwise the OS scales the circle. A
  * screen edge that stops the cursor eats part of the move and shifts the
  * center.
  *
- * M_JIGCLK arms (or disarms) a left click each time the cursor crosses the
- * bottom right point of the circle, 45 degrees below its rightmost point, i.e.
- * 1/8 of a turn after the start. M_JIGOFF disarms it too.
+ * M_JG_CON arms a left click each time the cursor crosses the bottom right
+ * point of the circle, 45 degrees below its rightmost point, i.e. 1/8 of a turn
+ * after the start. M_JG_COF disarms it, and so does M_JIGOFF.
  */
-#define JIGGLE_STEP_MS        1
-#define JIGGLE_RADIUS_DEFAULT 900
+// Delay: 100 ms per M_JG_DUP / M_JG_DDN press, and a single press between
+// 100 ms and 1 ms, the fastest (one pixel per millisecond).
+#define JIGGLE_DELAY_DEFAULT  2000
+#define JIGGLE_DELAY_MIN      1
+#define JIGGLE_DELAY_MAX      10000
+#define JIGGLE_DELAY_STEP     100
+#define JIGGLE_RADIUS_DEFAULT 10
 #define JIGGLE_RADIUS_MIN     1
 #define JIGGLE_RADIUS_MAX     2000
 
 bool     jiggle_active = false;
 bool     jiggle_click  = false;
 int16_t  jiggle_radius = JIGGLE_RADIUS_DEFAULT;
+uint16_t jiggle_delay  = JIGGLE_DELAY_DEFAULT; // ms between two steps
 int16_t  jiggle_x      = 0; // cursor offset from the center, y pointing down
 int16_t  jiggle_y      = 0;
 uint16_t jiggle_timer  = 0;
@@ -469,15 +479,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* ┃    -    │    =    │    |    │    /    │    (    │    )    │         ┃   ┃  Email  │   Home  │    ←    │    ↓    │    →    │   End   │ Enter ⏎ ┃ */
         C_HTG  , KC_EQL  ,  M_PPE  ,  M_SLH  ,  KC_5   , KC_MINS ,  I_PCT  ,     M_EMAIL2, KC_HOME , KC_LEFT , KC_DOWN , KC_RGHT , KC_END  , KC_PENT ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛   ┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃ Jig off │    <    │    @    │    >    │    [    │    ]    ┃                       ┃   n N   │   Bspc  │   Del   │  PgDn   │         │ RShft ⇧ ┃ */
-       M_JIGOFF, KC_NUBS ,  M_ARB  ,  M_GT   ,  M_OSB  ,  M_CSB  ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
+  /* ┃ Delay - │    <    │    @    │    >    │    [    │    ]    ┃                       ┃   n N   │   Bspc  │   Del   │  PgDn   │         │ RShft ⇧ ┃ */
+       M_JG_DDN, KC_NUBS ,  M_ARB  ,  M_GT   ,  M_OSB  ,  M_CSB  ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃ Jig on  │         │         │         │         ┃          ┃ Click ↘ ┃ ┃ Jig off ┃          ┃   Spc   │         │         │         │         ┃ */
-       M_JIG_ON, _______ , _______ , _______ , _______ ,            M_JIGCLK,   M_JIGOFF,            KC_SPC  , _______ , _______ , _______ , _______ ,
+  /* ┃ Delay + │         │         │         │         ┃          ┃Click on ┃ ┃ Jig off ┃          ┃   Spc   │         │         │         │         ┃ */
+       M_JG_DUP, _______ , _______ , _______ , _______ ,            M_JG_CON,   M_JIGOFF,            KC_SPC  , _______ , _______ , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━╃─────────┨ ┠─────────╄━━━━━━━━━┯━━━━━━━━━┓                                          */
-  /*                                          ┃Radius + │Radius - │ Jig on  ┃ ┃CtlAlt K │ Jig on  │         ┃                                          */
-                                                M_JIGRUP, M_JIGRDN, M_JIG_ON,   C_Alt_K , M_JIG_ON, _______
+  /*                                          ┃Radius + │Radius - │Click off┃ ┃CtlAlt K │ Jig on  │         ┃                                          */
+                                                M_JIGRUP, M_JIGRDN, M_JG_COF,   C_Alt_K , M_JIG_ON, _______
   /*                                          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛                                          */
     ),
 
@@ -749,7 +759,7 @@ static void jiggle_set_radius(int16_t radius) {
  * matrix_scan_kb() of the same file, which calls it.
  */
 void matrix_scan_user(void) {
-    if (jiggle_active && timer_elapsed(jiggle_timer) >= JIGGLE_STEP_MS) {
+    if (jiggle_active && timer_elapsed(jiggle_timer) >= jiggle_delay) {
         jiggle_timer = timer_read();
         jiggle_step();
     }
@@ -1092,12 +1102,30 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 PLAY_SONG(colemak_sound);
             }
             return false;
-        case M_JIGCLK:
-            jiggle_click = !jiggle_click;
-            if (jiggle_click) {
-                PLAY_SONG(jiggle_click_on_sound);
+        case M_JG_CON:
+            jiggle_click = true;
+            PLAY_SONG(jiggle_click_on_sound);
+            return false;
+        case M_JG_COF:
+            jiggle_click = false;
+            PLAY_SONG(jiggle_click_off_sound);
+            return false;
+        case M_JG_DUP:
+            if (jiggle_delay == JIGGLE_DELAY_MIN) {
+                jiggle_delay = JIGGLE_DELAY_STEP;
+            } else if (jiggle_delay < JIGGLE_DELAY_MAX) {
+                jiggle_delay += JIGGLE_DELAY_STEP;
             } else {
-                PLAY_SONG(jiggle_click_off_sound);
+                PLAY_SONG(dvorak_sound);
+            }
+            return false;
+        case M_JG_DDN:
+            if (jiggle_delay > JIGGLE_DELAY_STEP) {
+                jiggle_delay -= JIGGLE_DELAY_STEP;
+            } else if (jiggle_delay > JIGGLE_DELAY_MIN) {
+                jiggle_delay = JIGGLE_DELAY_MIN;
+            } else {
+                PLAY_SONG(colemak_sound);
             }
             return false;
         }
