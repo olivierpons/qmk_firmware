@@ -21,7 +21,9 @@
  * L0 AZERTY. Right thumbs: &nbsp; (M_NBSP), <tag></tag> around word (tap
  *    TD(TD_ATG); triple tap TD(TD_ATG): Syntax Terror intro theme).
  * L1 (hold MO(L_1)): F1-F12, \ { } ~ | / @ < > [ ] # %, arrows, word jumps,
- *    Home/End/PgUp/PgDn, 2 emails, mouse jiggler on/off, Ctrl+Alt+K dictation.
+ *    Home/End/PgUp/PgDn, 2 emails, Ctrl+Alt+K dictation, circle mouse jiggler
+ *    (left thumbs: radius +/-, on; left red key: click at bottom right; right
+ *    thumb next to Ctrl+Alt+K: on; right red key: off).
  * L2 (hold MO(L_2)): numpad, Caps/Num Lock, â ê î ô û ù ``, 2 signatures,
  *    Linux desktop left/right/maximize, Ctrl+[ Ctrl+].
  * L3 (hold MO(L_3)): copy/cut/paste as Ctrl+C/V, Ctrl+Shift+C/V, Ctrl+Ins/
@@ -279,6 +281,9 @@ enum custom_keycodes {
     // Mouse jiggling
     M_JIG_ON,
     M_JIGOFF,
+    M_JIGRUP,
+    M_JIGRDN,
+    M_JIGCLK,
 };
 
 // Key combination defines for better readability
@@ -387,8 +392,46 @@ float syntax_terror_intro    [][2] = SONG(
     M__NOTE(_C5, 51), M__NOTE(_AS4, 26), M__NOTE(_AS4, 26), M__NOTE(_G4, 51),
     M__NOTE(_AS4, 51), M__NOTE(_C5, 51), M__NOTE(_AS4, 154));
 
-uint8_t mouse_jiggle_active = 0; // 0 = inactive, 1-4 = directions N/E/S/W
-uint16_t mouse_jiggle_timer = 0;
+// Mouse jiggler: A6 when it starts, A3 when it stops, E6 / E4 when the bottom
+// right click is armed / disarmed.
+float jiggle_on_sound        [][2] = SONG(Q__NOTE(_A6));
+float jiggle_off_sound       [][2] = SONG(Q__NOTE(_A3));
+float jiggle_click_on_sound  [][2] = SONG(Q__NOTE(_E6));
+float jiggle_click_off_sound [][2] = SONG(Q__NOTE(_E4));
+
+/**
+ * Mouse jiggler: the cursor runs clockwise around a circle, at most one pixel
+ * every JIGGLE_STEP_MS, starting from its rightmost point. The center is where
+ * the cursor stood when M_JIG_ON was pressed, and M_JIGOFF brings the cursor
+ * back there. M_JIGRUP / M_JIGRDN change the radius, also while it runs: the
+ * cursor then moves along its radius to the new circle.
+ *
+ * Each step goes to the neighbour pixel (8-connected) along the tangent that
+ * stays closest to x^2 + y^2 = r^2, so the cursor follows every pixel of the
+ * circle and a full turn adds up to no move at all. With a radius of 900, a
+ * turn is about 5100 steps, i.e. about 5 s.
+ *
+ * Distances are mouse counts: they are screen pixels only when the OS pointer
+ * acceleration is flat with a speed of 1, otherwise the OS scales the circle. A
+ * screen edge that stops the cursor eats part of the move and shifts the
+ * center.
+ *
+ * M_JIGCLK arms (or disarms) a left click each time the cursor crosses the
+ * bottom right point of the circle, 45 degrees below its rightmost point, i.e.
+ * 1/8 of a turn after the start. M_JIGOFF disarms it too.
+ */
+#define JIGGLE_STEP_MS        1
+#define JIGGLE_RADIUS_DEFAULT 900
+#define JIGGLE_RADIUS_MIN     100
+#define JIGGLE_RADIUS_MAX     2000
+#define JIGGLE_RADIUS_STEP    100
+
+bool     jiggle_active = false;
+bool     jiggle_click  = false;
+int16_t  jiggle_radius = JIGGLE_RADIUS_DEFAULT;
+int16_t  jiggle_x      = 0; // cursor offset from the center, y pointing down
+int16_t  jiggle_y      = 0;
+uint16_t jiggle_timer  = 0;
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -426,14 +469,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* ┃    -    │    =    │    |    │    /    │    (    │    )    │         ┃   ┃  Email  │   Home  │    ←    │    ↓    │    →    │   End   │ Enter ⏎ ┃ */
         C_HTG  , KC_EQL  ,  M_PPE  ,  M_SLH  ,  KC_5   , KC_MINS ,  I_PCT  ,     M_EMAIL2, KC_HOME , KC_LEFT , KC_DOWN , KC_RGHT , KC_END  , KC_PENT ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛   ┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃         │    <    │    @    │    >    │    [    │    ]    ┃                       ┃   n N   │   Bspc  │   Del   │  PgDn   │         │ RShft ⇧ ┃ */
+  /* ┃ Jig off │    <    │    @    │    >    │    [    │    ]    ┃                       ┃   n N   │   Bspc  │   Del   │  PgDn   │         │ RShft ⇧ ┃ */
        M_JIGOFF, KC_NUBS ,  M_ARB  ,  M_GT   ,  M_OSB  ,  M_CSB  ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃         │         │         │         │         ┃          ┃         ┃ ┃         ┃          ┃   Spc   │         │         │         │         ┃ */
-       M_JIG_ON, _______ , _______ , _______ , _______ ,            _______ ,   _______ ,            KC_SPC  , _______ , _______ , _______ , _______ ,
+  /* ┃ Jig on  │         │         │         │         ┃          ┃ Click ↘ ┃ ┃ Jig off ┃          ┃   Spc   │         │         │         │         ┃ */
+       M_JIG_ON, _______ , _______ , _______ , _______ ,            M_JIGCLK,   M_JIGOFF,            KC_SPC  , _______ , _______ , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
-  /*                                          ┏━━━━━━━━━┯━━━━━━━━━┛         ┃ ┃         ┗━━━━━━━━━━━━━━━━━━━┓                                          */
-                                                _______ , _______ , _______ ,   C_Alt_K , _______ , _______
+  /*                                          ┏━━━━━━━━━┯━━━━━━━━━╃─────────┨ ┠─────────╄━━━━━━━━━┯━━━━━━━━━┓                                          */
+  /*                                          ┃Radius + │Radius - │ Jig on  ┃ ┃CtlAlt K │ Jig on  │         ┃                                          */
+                                                M_JIGRUP, M_JIGRDN, M_JIG_ON,   C_Alt_K , M_JIG_ON, _______
   /*                                          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛                                          */
     ),
 
@@ -611,7 +655,94 @@ uint16_t rapid_fire_2 = 0;
 uint16_t rapid_fire_wait_counter = 0;
 uint16_t rapid_fire_wait_limit = 120;
 
+/**
+ * Sends one mouse report. The buttons held through mouse keys (MS_BTN1...) stay
+ * down, so the jiggler does not release them.
+ */
+static void jiggle_report(int8_t dx, int8_t dy, uint8_t buttons) {
+    report_mouse_t report = {0};
+    report.buttons = mousekey_get_report().buttons | buttons;
+    report.x       = dx;
+    report.y       = dy;
+    host_mouse_send(&report);
+}
+
+// Moves the cursor by (dx, dy), split in reports of at most 127 per axis.
+static void jiggle_move(int16_t dx, int16_t dy) {
+    jiggle_x += dx;
+    jiggle_y += dy;
+    while (dx || dy) {
+        int8_t sx = dx > 127 ? 127 : (dx < -127 ? -127 : dx);
+        int8_t sy = dy > 127 ? 127 : (dy < -127 ? -127 : dy);
+        jiggle_report(sx, sy, 0);
+        dx -= sx;
+        dy -= sy;
+    }
+}
+
+// Distance of (x, y) to the circle, as |x^2 + y^2 - r^2|.
+static int32_t jiggle_error(int32_t x, int32_t y) {
+    int32_t e = x * x + y * y - (int32_t)jiggle_radius * jiggle_radius;
+    return e < 0 ? -e : e;
+}
+
+/**
+ * Moves the cursor one pixel clockwise (on screen, y pointing down) along the
+ * circle, and clicks when it crosses the bottom right point, where x = y > 0.
+ */
+static void jiggle_step(void) {
+    // Clockwise tangent at (x, y) with y pointing down: (-y, x).
+    int8_t sx = jiggle_y > 0 ? -1 : (jiggle_y < 0 ? 1 : 0);
+    int8_t sy = jiggle_x > 0 ? 1 : (jiggle_x < 0 ? -1 : 0);
+    if (!sx && !sy) {
+        sy = 1;
+    }
+    int8_t  best_x = sx;
+    int8_t  best_y = sx ? 0 : sy;
+    int32_t best_e = jiggle_error(jiggle_x + best_x, jiggle_y + best_y);
+    if (sx && sy) {
+        int32_t e = jiggle_error(jiggle_x, jiggle_y + sy);
+        if (e < best_e) {
+            best_x = 0;
+            best_y = sy;
+            best_e = e;
+        }
+        e = jiggle_error(jiggle_x + sx, jiggle_y + sy);
+        if (e < best_e) {
+            best_x = sx;
+            best_y = sy;
+        }
+    }
+    bool before = jiggle_x > jiggle_y;
+    jiggle_move(best_x, best_y);
+    if (jiggle_click && before && jiggle_x <= jiggle_y && jiggle_x > 0) {
+        jiggle_report(0, 0, MOUSE_BTN1);
+        jiggle_report(0, 0, 0);
+    }
+}
+
+// Scales the cursor offset to the new radius, i.e. moves it along its radius.
+static void jiggle_set_radius(int16_t radius) {
+    if (jiggle_active) {
+        int16_t x = (int32_t)jiggle_x * radius / jiggle_radius;
+        int16_t y = (int32_t)jiggle_y * radius / jiggle_radius;
+        jiggle_radius = radius;
+        jiggle_move(x - jiggle_x, y - jiggle_y);
+    } else {
+        jiggle_radius = radius;
+    }
+}
+
+/**
+ * QMK calls matrix_scan_user() on every matrix scan: matrix_scan() in
+ * quantum/matrix_common.c (CUSTOM_MATRIX = lite) calls the weak
+ * matrix_scan_kb() of the same file, which calls it.
+ */
 void matrix_scan_user(void) {
+    if (jiggle_active && timer_elapsed(jiggle_timer) >= JIGGLE_STEP_MS) {
+        jiggle_timer = timer_read();
+        jiggle_step();
+    }
     if (rapid_fire_1 || rapid_fire_2) {
         rapid_fire_wait_counter++;
         rapid_fire_wait_counter = rapid_fire_wait_counter % rapid_fire_wait_limit;
@@ -623,29 +754,6 @@ void matrix_scan_user(void) {
         }
         if (rapid_fire_2) {
             tap_code16(rapid_fire_2);
-        }
-    }
-    if (mouse_jiggle_active) {
-        if (timer_elapsed(mouse_jiggle_timer) > 800) { // 800ms = 0.8s
-            switch (mouse_jiggle_active) {
-                case 1: // N
-                    tap_code(MS_UP);
-                    mouse_jiggle_active = 3;
-                    break;
-                // case 2: // E
-                //     tap_code(MS_RGHT);
-                //     mouse_jiggle_active = 3;
-                //     break;
-                case 3: // S
-                    tap_code(MS_DOWN);
-                    mouse_jiggle_active = 1;
-                    break;
-                // case 4: // W
-                //     tap_code(MS_LEFT);
-                //     mouse_jiggle_active = 1;
-                //     break;
-            }
-            mouse_jiggle_timer = timer_read();
         }
     }
 }
@@ -943,16 +1051,43 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 SS_UP(X_LALT) SS_UP(X_LCTL));
             return false;
         case M_JIG_ON:
-            if (record->event.pressed) {
-                mouse_jiggle_active = true;
-                mouse_jiggle_timer = timer_read();
-                PLAY_SONG(colemak_sound);
+            PLAY_SONG(jiggle_on_sound);
+            if (!jiggle_active) {
+                jiggle_x = 0;
+                jiggle_y = 0;
+                jiggle_move(jiggle_radius, 0);
+                jiggle_active = true;
+                jiggle_timer  = timer_read();
             }
             return false;
         case M_JIGOFF:
-            if (record->event.pressed) {
-                mouse_jiggle_active = false;
+            PLAY_SONG(jiggle_off_sound);
+            if (jiggle_active) {
+                jiggle_active = false;
+                jiggle_move(-jiggle_x, -jiggle_y);
+            }
+            jiggle_click = false;
+            return false;
+        case M_JIGRUP:
+            if (jiggle_radius < JIGGLE_RADIUS_MAX) {
+                jiggle_set_radius(jiggle_radius + JIGGLE_RADIUS_STEP);
+            } else {
                 PLAY_SONG(dvorak_sound);
+            }
+            return false;
+        case M_JIGRDN:
+            if (jiggle_radius > JIGGLE_RADIUS_MIN) {
+                jiggle_set_radius(jiggle_radius - JIGGLE_RADIUS_STEP);
+            } else {
+                PLAY_SONG(colemak_sound);
+            }
+            return false;
+        case M_JIGCLK:
+            jiggle_click = !jiggle_click;
+            if (jiggle_click) {
+                PLAY_SONG(jiggle_click_on_sound);
+            } else {
+                PLAY_SONG(jiggle_click_off_sound);
             }
             return false;
         }
