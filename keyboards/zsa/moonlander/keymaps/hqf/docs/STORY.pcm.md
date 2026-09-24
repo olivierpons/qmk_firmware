@@ -21,7 +21,7 @@ Dem design AZERTY for typewriter, no be for programmer. Bracket and operator dey
 
 ## Keeping di screen awake
 
-Early early I add mouse-jiggle macro (`M_JIG_ON` / `M_JIGOFF`): di cursor dey shake itself for one small square every 800ms, so di machine no go lock or idle during long call or long reading. One key go turn am on, one go turn am off.
+Early early I add mouse-jiggle macro, so di machine no go lock or idle during long call or long reading. Before, di cursor just dey shake small every 800ms; now e dey follow one circle, pixel by pixel. `M_JG_ON` / `M_JG_OFF` go start am and stop am, `M_JG_RUP` / `M_JG_RDN` go make di radius big or small (10 pixels by default, reach even one pixel wey still dey move di mouse), `M_JG_DUP` / `M_JG_DDN` go make di pause between two pixels long or short by one tenth of second (2 seconds by default), and `M_JG_CLK` go on or off one left click every time di cursor reach di bottom right of di circle: very high beep mean on, very low beep mean off.
 
 ## Turning di keyboard to controller
 
