@@ -282,7 +282,7 @@ enum custom_keycodes {
     M_JG_TOG,
     M_JG_RUP,
     M_JG_RDN,
-    M_JG_CLK,
+    M_JG_CTG,
     M_JG_DUP,
     M_JG_DDN,
 };
@@ -433,7 +433,7 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
  * screen edge that stops the cursor eats part of the move and shifts the
  * center.
  *
- * M_JG_CLK arms or disarms a left click each time the cursor crosses the bottom
+ * M_JG_CTG arms or disarms a left click each time the cursor crosses the bottom
  * right point of the circle, 45 degrees below its rightmost point, i.e. 1/8 of
  * a turn after the start. Stopping the jiggler disarms it too.
  */
@@ -495,7 +495,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        _______ , KC_NUBS ,  M_ARB  ,  M_GT   ,  M_OSB  ,  M_CSB  ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃ Delay + │ Delay - │ Click ↘ │Radius + │Radius - ┃          ┃         ┃ ┃         ┃          ┃   Spc   │         │         │         │         ┃ */
-       M_JG_DUP, M_JG_DDN, M_JG_CLK, M_JG_RUP, M_JG_RDN,            _______ ,   _______ ,            KC_SPC  , _______ , _______ , _______ , _______ ,
+       M_JG_DUP, M_JG_DDN, M_JG_CTG, M_JG_RUP, M_JG_RDN,            _______ ,   _______ ,            KC_SPC  , _______ , _______ , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━╃─────────┨ ┠─────────╄━━━━━━━━━┯━━━━━━━━━┓                                          */
   /*                                          ┃         │         │         ┃ ┃CtlAlt K │ Jig tog │         ┃                                          */
@@ -1111,7 +1111,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 PLAY_SONG(jiggle_radius_min_sound);
             }
             return false;
-        case M_JG_CLK:
+        case M_JG_CTG:
             jiggle_click = !jiggle_click;
             if (jiggle_click) {
                 PLAY_SONG(jiggle_click_on_sound);

@@ -21,7 +21,7 @@ AZERTY daktilolar için tasarlanmıştı, programcılar için değil. Parantezle
 
 ## Ekranı uyanık tutmak
 
-Erken bir dönemde bir fare titretme makrosu ekledim, böylece uzun bir görüşme veya uzun bir okuma sırasında makine kilitlenmez veya boşta kalmaz. Başta imleç her 800 ms'de yalnızca biraz kıpırdıyordu; şimdi bir çemberi piksel piksel izliyor. `M_JG_TOG` onu başlatır ve durdurur, `M_JG_RUP` / `M_JG_RDN` yarıçapı büyütür ve küçültür (varsayılan 10 piksel, fareyi hâlâ hareket ettiren tek bir piksele kadar), `M_JG_DUP` / `M_JG_DDN` iki piksel arasındaki duraklamayı saniyenin onda biri kadar uzatır ve kısaltır (varsayılan 2 saniye), `M_JG_CLK` ise imleç çemberin sağ alt noktasına her vardığında yapılan sol tıklamayı açar veya kapatır; açılınca çok tiz, kapanınca çok pes bir bip sesi çıkar.
+Erken bir dönemde bir fare titretme makrosu ekledim, böylece uzun bir görüşme veya uzun bir okuma sırasında makine kilitlenmez veya boşta kalmaz. Başta imleç her 800 ms'de yalnızca biraz kıpırdıyordu; şimdi bir çemberi piksel piksel izliyor. `M_JG_TOG` onu başlatır ve durdurur, `M_JG_RUP` / `M_JG_RDN` yarıçapı büyütür ve küçültür (varsayılan 10 piksel, fareyi hâlâ hareket ettiren tek bir piksele kadar), `M_JG_DUP` / `M_JG_DDN` iki piksel arasındaki duraklamayı saniyenin onda biri kadar uzatır ve kısaltır (varsayılan 2 saniye), `M_JG_CTG` ise imleç çemberin sağ alt noktasına her vardığında yapılan sol tıklamayı açar veya kapatır; açılınca çok tiz, kapanınca çok pes bir bip sesi çıkar.
 
 ## Klavyeyi bir kumandaya dönüştürmek
 

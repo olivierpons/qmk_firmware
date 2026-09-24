@@ -21,7 +21,7 @@ O AZERTY foi feito para máquinas de escrever, não para programadores. Colchete
 
 ## Mantendo a tela acordada
 
-No início, adicionei uma macro de jiggle de mouse, para que a máquina não trave nem entre em repouso durante uma ligação longa ou uma leitura longa. Primeiro o cursor só se mexia um pouco a cada 800 ms; agora ele percorre um círculo pixel a pixel. `M_JG_TOG` o inicia e o para, `M_JG_RUP` / `M_JG_RDN` aumentam e diminuem o raio (10 pixels por padrão, até um único pixel, que ainda move o mouse), `M_JG_DUP` / `M_JG_DDN` alongam e encurtam em um décimo de segundo a pausa entre dois pixels (2 segundos por padrão), e `M_JG_CLK` liga ou desliga um clique esquerdo sempre que o cursor chega à parte inferior direita do círculo, com um bipe bem agudo ao ligar e um bem grave ao desligar.
+No início, adicionei uma macro de jiggle de mouse, para que a máquina não trave nem entre em repouso durante uma ligação longa ou uma leitura longa. Primeiro o cursor só se mexia um pouco a cada 800 ms; agora ele percorre um círculo pixel a pixel. `M_JG_TOG` o inicia e o para, `M_JG_RUP` / `M_JG_RDN` aumentam e diminuem o raio (10 pixels por padrão, até um único pixel, que ainda move o mouse), `M_JG_DUP` / `M_JG_DDN` alongam e encurtam em um décimo de segundo a pausa entre dois pixels (2 segundos por padrão), e `M_JG_CTG` liga ou desliga um clique esquerdo sempre que o cursor chega à parte inferior direita do círculo, com um bipe bem agudo ao ligar e um bem grave ao desligar.
 
 ## Transformando o teclado em um controle
 
