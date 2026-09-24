@@ -279,10 +279,10 @@ enum custom_keycodes {
     RF_MOUSE3,
     RF_SPACE,
     // Mouse jiggling
-    M_JIG_ON,
-    M_JIGOFF,
-    M_JIGRUP,
-    M_JIGRDN,
+    M_JG_ON,
+    M_JG_OFF,
+    M_JG_RUP,
+    M_JG_RDN,
     M_JG_CON,
     M_JG_COF,
     M_JG_DUP,
@@ -405,8 +405,8 @@ float jiggle_click_off_sound [][2] = SONG(Q__NOTE(_E4));
 /**
  * Mouse jiggler: the cursor runs clockwise around a circle, one pixel every
  * jiggle_delay ms, starting from its rightmost point. The center is where the
- * cursor stood when M_JIG_ON was pressed, and M_JIGOFF brings the cursor back
- * there. M_JIGRUP / M_JIGRDN change the radius, also while it runs: the cursor
+ * cursor stood when M_JG_ON was pressed, and M_JG_OFF brings the cursor back
+ * there. M_JG_RUP / M_JG_RDN change the radius, also while it runs: the cursor
  * then moves along its radius to the new circle. M_JG_DUP / M_JG_DDN lengthen /
  * shorten the delay.
  *
@@ -423,7 +423,7 @@ float jiggle_click_off_sound [][2] = SONG(Q__NOTE(_E4));
  *
  * M_JG_CON arms a left click each time the cursor crosses the bottom right
  * point of the circle, 45 degrees below its rightmost point, i.e. 1/8 of a turn
- * after the start. M_JG_COF disarms it, and so does M_JIGOFF.
+ * after the start. M_JG_COF disarms it, and so does M_JG_OFF.
  */
 // Delay: 100 ms per M_JG_DUP / M_JG_DDN press, and a single press between
 // 100 ms and 1 ms, the fastest (one pixel per millisecond).
@@ -483,11 +483,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        M_JG_DDN, KC_NUBS ,  M_ARB  ,  M_GT   ,  M_OSB  ,  M_CSB  ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
   /* ┃ Delay + │         │         │         │         ┃          ┃Click on ┃ ┃ Jig off ┃          ┃   Spc   │         │         │         │         ┃ */
-       M_JG_DUP, _______ , _______ , _______ , _______ ,            M_JG_CON,   M_JIGOFF,            KC_SPC  , _______ , _______ , _______ , _______ ,
+       M_JG_DUP, _______ , _______ , _______ , _______ ,            M_JG_CON,   M_JG_OFF,            KC_SPC  , _______ , _______ , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━╃─────────┨ ┠─────────╄━━━━━━━━━┯━━━━━━━━━┓                                          */
   /*                                          ┃Radius + │Radius - │Click off┃ ┃CtlAlt K │ Jig on  │         ┃                                          */
-                                                M_JIGRUP, M_JIGRDN, M_JG_COF,   C_Alt_K , M_JIG_ON, _______
+                                                M_JG_RUP, M_JG_RDN, M_JG_COF,   C_Alt_K , M_JG_ON , _______
   /*                                          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛                                          */
     ),
 
@@ -732,7 +732,7 @@ static void jiggle_step(void) {
 }
 
 /**
- * Radius change of one M_JIGRUP / M_JIGRDN press: 100 from 100 up, 10 from 10
+ * Radius change of one M_JG_RUP / M_JG_RDN press: 100 from 100 up, 10 from 10
  * up, 1 below, so the radius goes 900 ... 100, 90 ... 10, 9 ... 1 and back up
  * through the same values.
  */
@@ -1070,7 +1070,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             SEND_STRING(SS_DOWN(X_LCTL) SS_DOWN(X_LALT) SS_TAP(X_RIGHT) \
                 SS_UP(X_LALT) SS_UP(X_LCTL));
             return false;
-        case M_JIG_ON:
+        case M_JG_ON:
             PLAY_SONG(jiggle_on_sound);
             if (!jiggle_active) {
                 jiggle_x = 0;
@@ -1080,7 +1080,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 jiggle_timer  = timer_read();
             }
             return false;
-        case M_JIGOFF:
+        case M_JG_OFF:
             PLAY_SONG(jiggle_off_sound);
             if (jiggle_active) {
                 jiggle_active = false;
@@ -1088,14 +1088,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             jiggle_click = false;
             return false;
-        case M_JIGRUP:
+        case M_JG_RUP:
             if (jiggle_radius < JIGGLE_RADIUS_MAX) {
                 jiggle_set_radius(jiggle_radius + jiggle_radius_step(true));
             } else {
                 PLAY_SONG(dvorak_sound);
             }
             return false;
-        case M_JIGRDN:
+        case M_JG_RDN:
             if (jiggle_radius > JIGGLE_RADIUS_MIN) {
                 jiggle_set_radius(jiggle_radius - jiggle_radius_step(false));
             } else {
