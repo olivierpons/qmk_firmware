@@ -438,11 +438,10 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
  * a turn after the start. Stopping the jiggler disarms it too.
  */
 // Delay: jiggle_delay, the only delay, read by matrix_scan_user() and changed
-// by 100 ms per M_JG_DUP / M_JG_DDN press, between 100 ms and 10 s.
+// by M_JG_DUP / M_JG_DDN between 1 ms and 10 s, see jiggle_step_size().
 #define JIGGLE_DELAY_DEFAULT  1000
-#define JIGGLE_DELAY_MIN      100
+#define JIGGLE_DELAY_MIN      1
 #define JIGGLE_DELAY_MAX      10000
-#define JIGGLE_DELAY_STEP     100
 #define JIGGLE_RADIUS_DEFAULT 10
 #define JIGGLE_RADIUS_MIN     1
 #define JIGGLE_RADIUS_MAX     2000
@@ -744,12 +743,12 @@ static void jiggle_step(void) {
 }
 
 /**
- * Radius change of one M_JG_RUP / M_JG_RDN press: 100 from 100 up, 10 from 10
- * up, 1 below, so the radius goes 900 ... 100, 90 ... 10, 9 ... 1 and back up
- * through the same values.
+ * Change of one press on the radius (M_JG_RUP / M_JG_RDN) or delay (M_JG_DUP /
+ * M_JG_DDN) keys: 100 from 100 up, 10 from 10 up, 1 below, so the value goes
+ * 900 ... 100, 90 ... 10, 9 ... 1 and back up through the same values.
  */
-static int16_t jiggle_radius_step(bool up) {
-    int16_t floor = up ? jiggle_radius : jiggle_radius - 1;
+static uint16_t jiggle_step_size(uint16_t value, bool up) {
+    uint16_t floor = up ? value : value - 1;
     return floor >= 100 ? 100 : (floor >= 10 ? 10 : 1);
 }
 
@@ -1099,14 +1098,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         case M_JG_RUP:
             if (jiggle_radius < JIGGLE_RADIUS_MAX) {
-                jiggle_set_radius(jiggle_radius + jiggle_radius_step(true));
+                jiggle_set_radius(
+                    jiggle_radius + jiggle_step_size(jiggle_radius, true));
             } else {
                 PLAY_SONG(jiggle_radius_max_sound);
             }
             return false;
         case M_JG_RDN:
             if (jiggle_radius > JIGGLE_RADIUS_MIN) {
-                jiggle_set_radius(jiggle_radius - jiggle_radius_step(false));
+                jiggle_set_radius(
+                    jiggle_radius - jiggle_step_size(jiggle_radius, false));
             } else {
                 PLAY_SONG(jiggle_radius_min_sound);
             }
@@ -1121,14 +1122,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         case M_JG_DUP:
             if (jiggle_delay < JIGGLE_DELAY_MAX) {
-                jiggle_delay += JIGGLE_DELAY_STEP;
+                jiggle_delay += jiggle_step_size(jiggle_delay, true);
             } else {
                 PLAY_SONG(jiggle_delay_max_sound);
             }
             return false;
         case M_JG_DDN:
             if (jiggle_delay > JIGGLE_DELAY_MIN) {
-                jiggle_delay -= JIGGLE_DELAY_STEP;
+                jiggle_delay -= jiggle_step_size(jiggle_delay, false);
             } else {
                 PLAY_SONG(jiggle_delay_min_sound);
             }

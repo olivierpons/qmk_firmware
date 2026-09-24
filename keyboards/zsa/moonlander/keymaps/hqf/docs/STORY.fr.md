@@ -21,7 +21,7 @@ L'AZERTY a été conçu pour les machines à écrire, pas pour les développeurs
 
 ## Garder l'écran éveillé
 
-Très tôt, j'ai ajouté une macro de jiggle de souris, pour que la machine ne se verrouille pas et ne passe pas en veille pendant un long appel ou une longue lecture. Au début, le curseur bougeait juste un peu toutes les 800 ms ; aujourd'hui, il suit un cercle pixel par pixel. `M_JG_TOG` le démarre et l'arrête, `M_JG_RUP` / `M_JG_RDN` agrandissent et réduisent le rayon (10 pixels par défaut, jusqu'à un seul pixel, qui fait encore bouger la souris), `M_JG_DUP` / `M_JG_DDN` allongent et raccourcissent d'un dixième de seconde la pause entre deux pixels (1 seconde par défaut), et `M_JG_CTG` active ou coupe un clic gauche chaque fois que le curseur arrive en bas à droite du cercle, avec un bip très aigu pour activé et un bip très grave pour coupé.
+Très tôt, j'ai ajouté une macro de jiggle de souris, pour que la machine ne se verrouille pas et ne passe pas en veille pendant un long appel ou une longue lecture. Au début, le curseur bougeait juste un peu toutes les 800 ms ; aujourd'hui, il suit un cercle pixel par pixel. `M_JG_TOG` le démarre et l'arrête, `M_JG_RUP` / `M_JG_RDN` agrandissent et réduisent le rayon (10 pixels par défaut, jusqu'à un seul pixel, qui fait encore bouger la souris), `M_JG_DUP` / `M_JG_DDN` allongent et raccourcissent d'un dixième de seconde la pause entre deux pixels (1 seconde par défaut ; sous 100 ms le pas passe à 10 ms, sous 10 ms à 1 ms), et `M_JG_CTG` active ou coupe un clic gauche chaque fois que le curseur arrive en bas à droite du cercle, avec un bip très aigu pour activé et un bip très grave pour coupé.
 
 ## Transformer le clavier en manette
 
