@@ -425,7 +425,7 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
  * Each step goes to the neighbour pixel (8-connected) along the tangent that
  * stays closest to x^2 + y^2 = r^2, so the cursor follows every pixel of the
  * circle and a full turn adds up to no move at all. With the default radius of
- * 10, a turn is 56 steps, i.e. 112 s at the default delay of 2 s. The smallest
+ * 10, a turn is 56 steps, i.e. 56 s at the default delay of 1 s. The smallest
  * radius, 1, still moves the cursor: 8 one-pixel steps around the center.
  *
  * Distances are mouse counts: they are screen pixels only when the OS pointer
@@ -437,10 +437,10 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
  * right point of the circle, 45 degrees below its rightmost point, i.e. 1/8 of
  * a turn after the start. Stopping the jiggler disarms it too.
  */
-// Delay: 100 ms per M_JG_DUP / M_JG_DDN press, and a single press between
-// 100 ms and 1 ms, the fastest (one pixel per millisecond).
-#define JIGGLE_DELAY_DEFAULT  2000
-#define JIGGLE_DELAY_MIN      1
+// Delay: jiggle_delay, the only delay, read by matrix_scan_user() and changed
+// by 100 ms per M_JG_DUP / M_JG_DDN press, between 100 ms and 10 s.
+#define JIGGLE_DELAY_DEFAULT  1000
+#define JIGGLE_DELAY_MIN      100
 #define JIGGLE_DELAY_MAX      10000
 #define JIGGLE_DELAY_STEP     100
 #define JIGGLE_RADIUS_DEFAULT 10
@@ -1120,19 +1120,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
         case M_JG_DUP:
-            if (jiggle_delay == JIGGLE_DELAY_MIN) {
-                jiggle_delay = JIGGLE_DELAY_STEP;
-            } else if (jiggle_delay < JIGGLE_DELAY_MAX) {
+            if (jiggle_delay < JIGGLE_DELAY_MAX) {
                 jiggle_delay += JIGGLE_DELAY_STEP;
             } else {
                 PLAY_SONG(jiggle_delay_max_sound);
             }
             return false;
         case M_JG_DDN:
-            if (jiggle_delay > JIGGLE_DELAY_STEP) {
+            if (jiggle_delay > JIGGLE_DELAY_MIN) {
                 jiggle_delay -= JIGGLE_DELAY_STEP;
-            } else if (jiggle_delay > JIGGLE_DELAY_MIN) {
-                jiggle_delay = JIGGLE_DELAY_MIN;
             } else {
                 PLAY_SONG(jiggle_delay_min_sound);
             }

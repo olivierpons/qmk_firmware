@@ -21,7 +21,7 @@ AZERTY dirancang untuk mesin ketik, bukan untuk programmer. Tanda kurung dan ope
 
 ## Menjaga layar tetap terjaga
 
-Sejak awal saya menambahkan makro mouse-jiggle, agar komputer tidak terkunci atau idle selama panggilan panjang atau bacaan panjang. Awalnya kursor hanya bergeser sedikit setiap 800 md; sekarang ia mengikuti sebuah lingkaran piksel demi piksel. `M_JG_TOG` menyalakan dan mematikannya, `M_JG_RUP` / `M_JG_RDN` memperbesar dan memperkecil jari-jari (10 piksel secara bawaan, hingga satu piksel saja, yang tetap menggerakkan mouse), `M_JG_DUP` / `M_JG_DDN` memperpanjang dan memperpendek jeda antara dua piksel sebesar sepersepuluh detik (2 detik secara bawaan), dan `M_JG_CTG` menyalakan atau mematikan klik kiri setiap kali kursor tiba di kanan bawah lingkaran, dengan bunyi bip sangat tinggi saat menyala dan sangat rendah saat mati.
+Sejak awal saya menambahkan makro mouse-jiggle, agar komputer tidak terkunci atau idle selama panggilan panjang atau bacaan panjang. Awalnya kursor hanya bergeser sedikit setiap 800 md; sekarang ia mengikuti sebuah lingkaran piksel demi piksel. `M_JG_TOG` menyalakan dan mematikannya, `M_JG_RUP` / `M_JG_RDN` memperbesar dan memperkecil jari-jari (10 piksel secara bawaan, hingga satu piksel saja, yang tetap menggerakkan mouse), `M_JG_DUP` / `M_JG_DDN` memperpanjang dan memperpendek jeda antara dua piksel sebesar sepersepuluh detik (1 detik secara bawaan), dan `M_JG_CTG` menyalakan atau mematikan klik kiri setiap kali kursor tiba di kanan bawah lingkaran, dengan bunyi bip sangat tinggi saat menyala dan sangat rendah saat mati.
 
 ## Mengubah keyboard menjadi controller
 

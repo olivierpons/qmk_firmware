@@ -19,7 +19,7 @@ AZERTY was built for typewriters, not programmers. Brackets and operators sit be
 
 ## Keeping the screen awake
 
-Early on I added a mouse-jiggle macro, so the machine doesn't lock or go idle during a long call or a long read. At first the cursor just nudged itself every 800ms; now it follows a circle, pixel by pixel. `M_JG_TOG` starts and stops it, `M_JG_RUP` / `M_JG_RDN` grow and shrink the radius (10 pixels by default, down to a single pixel, which still moves the mouse), `M_JG_DUP` / `M_JG_DDN` lengthen and shorten the pause between two pixels by a tenth of a second (2 seconds by default), and `M_JG_CTG` turns on or off a left click each time the cursor reaches the bottom right of the circle, with a very high beep for on and a very low one for off.
+Early on I added a mouse-jiggle macro, so the machine doesn't lock or go idle during a long call or a long read. At first the cursor just nudged itself every 800ms; now it follows a circle, pixel by pixel. `M_JG_TOG` starts and stops it, `M_JG_RUP` / `M_JG_RDN` grow and shrink the radius (10 pixels by default, down to a single pixel, which still moves the mouse), `M_JG_DUP` / `M_JG_DDN` lengthen and shorten the pause between two pixels by a tenth of a second (1 second by default), and `M_JG_CTG` turns on or off a left click each time the cursor reaches the bottom right of the circle, with a very high beep for on and a very low one for off.
 
 ## Turning the board into a controller
 
