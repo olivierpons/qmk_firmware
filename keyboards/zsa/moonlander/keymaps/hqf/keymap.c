@@ -402,6 +402,9 @@ float syntax_terror_intro    [][2] = SONG(
  * falling at the minimum. Delay at its limit: three notes, same directions.
  */
 float jiggle_on_sound         [][2] = SONG(H__NOTE(_E7));
+// Length of jiggle_on_sound, an H__NOTE at the default tempo of 120:
+// 32 * 1875 / (120 * 2) ms, see audio_duration_to_ms().
+#define JIGGLE_ON_SOUND_MS    250
 float jiggle_off_sound        [][2] = SONG(H__NOTE(_E4));
 float jiggle_click_on_sound   [][2] = SONG(Q__NOTE(_A7), E__NOTE(_REST),
                                            Q__NOTE(_A7));
@@ -417,10 +420,13 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
 /**
  * Mouse jiggler: the cursor runs clockwise around a circle, one pixel every
  * jiggle_delay ms, starting from its rightmost point. The center is where the
- * cursor stood when M_JG_TOG started it, and M_JG_TOG brings the cursor back
- * there when it stops it. M_JG_RUP / M_JG_RDN change the radius, also while it runs: the cursor
- * then moves along its radius to the new circle. M_JG_DUP / M_JG_DDN lengthen /
- * shorten the delay.
+ * cursor stood when M_JG_TOG first started it. M_JG_TOG stops it and leaves
+ * the cursor where it is; started again, it goes on from that point of the
+ * circle. Radius, delay, click and position are kept from one run to the next.
+ * M_JG_RUP / M_JG_RDN change the radius, also while it runs: the cursor then
+ * moves along its radius to the new circle. M_JG_DUP / M_JG_DDN lengthen /
+ * shorten the delay: a tap changes it by 1 ms, a key held past TAPPING_TERM
+ * changes it by 10 ms per repeat, repeats coming faster and faster.
  *
  * Each step goes to the neighbour pixel (8-connected) along the tangent that
  * stays closest to x^2 + y^2 = r^2, so the cursor follows every pixel of the
@@ -435,24 +441,50 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
  *
  * M_JG_CTG arms or disarms a left click each time the cursor crosses the bottom
  * right point of the circle, 45 degrees below its rightmost point, i.e. 1/8 of
- * a turn after the start. Stopping the jiggler disarms it too.
+ * a turn after the start.
  */
 // Delay: jiggle_delay, the only delay, read by matrix_scan_user() and changed
-// by M_JG_DUP / M_JG_DDN between 1 ms and 10 s, see jiggle_step_size().
+// by M_JG_DUP / M_JG_DDN between 1 ms and 10 s.
 #define JIGGLE_DELAY_DEFAULT  1000
 #define JIGGLE_DELAY_MIN      1
 #define JIGGLE_DELAY_MAX      10000
+#define JIGGLE_DELAY_TAP_MS   1  // change of a tap
+#define JIGGLE_DELAY_HOLD_MS  10 // change of each repeat while held
+// Repeats while held: the first one TAPPING_TERM after the press, the next ones
+// JIGGLE_REPEAT_FIRST_MS apart, each gap 1/8 shorter, down to
+// JIGGLE_REPEAT_LAST_MS.
+#define JIGGLE_REPEAT_FIRST_MS 200
+#define JIGGLE_REPEAT_LAST_MS  10
 #define JIGGLE_RADIUS_DEFAULT 10
 #define JIGGLE_RADIUS_MIN     1
 #define JIGGLE_RADIUS_MAX     2000
 
-bool     jiggle_active = false;
-bool     jiggle_click  = false;
-int16_t  jiggle_radius = JIGGLE_RADIUS_DEFAULT;
-uint16_t jiggle_delay  = JIGGLE_DELAY_DEFAULT; // ms between two steps
-int16_t  jiggle_x      = 0; // cursor offset from the center, y pointing down
-int16_t  jiggle_y      = 0;
-uint16_t jiggle_timer  = 0;
+static bool     jiggle_active = false;
+static bool     jiggle_click  = false;
+static int16_t  jiggle_radius = JIGGLE_RADIUS_DEFAULT;
+static uint16_t jiggle_delay  = JIGGLE_DELAY_DEFAULT; // ms between two steps
+static int16_t  jiggle_x      = 0; // cursor offset from the center, y down
+static int16_t  jiggle_y      = 0;
+static int16_t  jiggle_on     = 0; // radius of (jiggle_x, jiggle_y), 0: never
+static uint16_t jiggle_timer  = 0;
+
+// Delay key held: +1 (M_JG_DUP), -1 (M_JG_DDN), 0 = none.
+static int8_t   jiggle_delay_dir     = 0;
+static bool     jiggle_delay_held    = false; // held past TAPPING_TERM
+static bool     jiggle_delay_stopped = false; // limit reached while held
+static uint16_t jiggle_delay_pressed = 0;
+static uint16_t jiggle_repeat_timer  = 0;
+static uint16_t jiggle_repeat_ms     = 0;
+
+/**
+ * Volume of every sound, in percent of the DAC full scale. jiggle_on_sound
+ * plays at AUDIO_QUIET_PERCENT: high notes come out louder than low ones on the
+ * keyboard speaker. matrix_scan_user() sets it back to 100 once
+ * JIGGLE_ON_SOUND_MS are over.
+ */
+#define AUDIO_QUIET_PERCENT 50
+static uint8_t  audio_volume       = 100;
+static uint16_t audio_volume_timer = 0;
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -743,25 +775,156 @@ static void jiggle_step(void) {
 }
 
 /**
- * Change of one press on the radius (M_JG_RUP / M_JG_RDN) or delay (M_JG_DUP /
- * M_JG_DDN) keys: 100 from 100 up, 10 from 10 up, 1 below, so the value goes
- * 900 ... 100, 90 ... 10, 9 ... 1 and back up through the same values.
+ * Change of one press on the radius keys (M_JG_RUP / M_JG_RDN): 100 from 100
+ * up, 10 from 10 up, 1 below, so the radius goes 900 ... 100, 90 ... 10, 9 ...
+ * 1 and back up through the same values.
  */
 static uint16_t jiggle_step_size(uint16_t value, bool up) {
     uint16_t floor = up ? value : value - 1;
     return floor >= 100 ? 100 : (floor >= 10 ? 10 : 1);
 }
 
-// Scales the cursor offset to the new radius, i.e. moves it along its radius.
-static void jiggle_set_radius(int16_t radius) {
-    if (jiggle_active) {
-        int16_t x = (int32_t)jiggle_x * radius / jiggle_radius;
-        int16_t y = (int32_t)jiggle_y * radius / jiggle_radius;
-        jiggle_radius = radius;
+/**
+ * Moves the cursor along its radius from the circle of radius jiggle_on to the
+ * one of radius jiggle_radius. The first time, jiggle_on is 0 and the cursor
+ * goes from the center to the rightmost point of the circle.
+ */
+static void jiggle_fit(void) {
+    if (!jiggle_on) {
+        jiggle_move(jiggle_radius, 0);
+    } else if (jiggle_on != jiggle_radius) {
+        int16_t x = (int32_t)jiggle_x * jiggle_radius / jiggle_on;
+        int16_t y = (int32_t)jiggle_y * jiggle_radius / jiggle_on;
         jiggle_move(x - jiggle_x, y - jiggle_y);
-    } else {
-        jiggle_radius = radius;
     }
+    jiggle_on = jiggle_radius;
+}
+
+// Sets the radius; while the jiggler runs, the cursor moves to the new circle.
+static void jiggle_set_radius(int16_t radius) {
+    jiggle_radius = radius;
+    if (jiggle_active) {
+        jiggle_fit();
+    }
+}
+
+/**
+ * Adds step ms (removes if negative) to jiggle_delay, kept within
+ * JIGGLE_DELAY_MIN and JIGGLE_DELAY_MAX. Already at that limit: plays its sound
+ * and returns false.
+ */
+static bool jiggle_delay_add(int16_t step) {
+    if (step > 0 && jiggle_delay >= JIGGLE_DELAY_MAX) {
+        PLAY_SONG(jiggle_delay_max_sound);
+        return false;
+    }
+    if (step < 0 && jiggle_delay <= JIGGLE_DELAY_MIN) {
+        PLAY_SONG(jiggle_delay_min_sound);
+        return false;
+    }
+    int32_t delay = (int32_t)jiggle_delay + step;
+    if (delay > JIGGLE_DELAY_MAX) {
+        delay = JIGGLE_DELAY_MAX;
+    } else if (delay < JIGGLE_DELAY_MIN) {
+        delay = JIGGLE_DELAY_MIN;
+    }
+    jiggle_delay = delay;
+    return true;
+}
+
+// Key repeat of a held M_JG_DUP / M_JG_DDN, called on every matrix scan.
+static void jiggle_delay_repeat(void) {
+    if (!jiggle_delay_dir || jiggle_delay_stopped) {
+        return;
+    }
+    if (!jiggle_delay_held) {
+        if (timer_elapsed(jiggle_delay_pressed) < TAPPING_TERM) {
+            return;
+        }
+        jiggle_delay_held = true;
+        jiggle_repeat_ms  = JIGGLE_REPEAT_FIRST_MS;
+    } else if (timer_elapsed(jiggle_repeat_timer) < jiggle_repeat_ms) {
+        return;
+    } else if (jiggle_repeat_ms > JIGGLE_REPEAT_LAST_MS) {
+        jiggle_repeat_ms -= jiggle_repeat_ms / 8;
+        if (jiggle_repeat_ms < JIGGLE_REPEAT_LAST_MS) {
+            jiggle_repeat_ms = JIGGLE_REPEAT_LAST_MS;
+        }
+    }
+    jiggle_repeat_timer = timer_read();
+    if (!jiggle_delay_add(jiggle_delay_dir * JIGGLE_DELAY_HOLD_MS)) {
+        jiggle_delay_stopped = true;
+    }
+}
+
+#if AUDIO_MAX_SIMULTANEOUS_TONES != 1
+#    error "dac_value_generate() below plays a single tone"
+#endif
+
+/**
+ * Sine wave of the dac_additive audio driver, from 0 to 4095 with its middle
+ * AUDIO_DAC_OFF_VALUE as silence: one period over 256 samples, starting at 0.
+ */
+static const uint16_t dac_sine[256] = {
+       0,    1,    2,    6,   10,   15,   22,   30,   39,   50,   61,   74,
+      88,  103,  120,  137,  156,  176,  197,  219,  242,  266,  291,  318,
+     345,  373,  403,  433,  465,  497,  530,  565,  600,  636,  672,  710,
+     749,  788,  828,  869,  910,  952,  995, 1038, 1082, 1127, 1172, 1218,
+    1264, 1311, 1358, 1405, 1453, 1501, 1550, 1599, 1648, 1697, 1747, 1797,
+    1847, 1897, 1947, 1997, 2048, 2098, 2148, 2198, 2248, 2298, 2348, 2398,
+    2447, 2496, 2545, 2594, 2642, 2690, 2737, 2784, 2831, 2877, 2923, 2968,
+    3013, 3057, 3100, 3143, 3185, 3226, 3267, 3307, 3346, 3385, 3423, 3459,
+    3495, 3530, 3565, 3598, 3630, 3662, 3692, 3722, 3750, 3777, 3804, 3829,
+    3853, 3876, 3898, 3919, 3939, 3958, 3975, 3992, 4007, 4021, 4034, 4045,
+    4056, 4065, 4073, 4080, 4085, 4089, 4093, 4094, 4095, 4094, 4093, 4089,
+    4085, 4080, 4073, 4065, 4056, 4045, 4034, 4021, 4007, 3992, 3975, 3958,
+    3939, 3919, 3898, 3876, 3853, 3829, 3804, 3777, 3750, 3722, 3692, 3662,
+    3630, 3598, 3565, 3530, 3495, 3459, 3423, 3385, 3346, 3307, 3267, 3226,
+    3185, 3143, 3100, 3057, 3013, 2968, 2923, 2877, 2831, 2784, 2737, 2690,
+    2642, 2594, 2545, 2496, 2447, 2398, 2348, 2298, 2248, 2198, 2148, 2098,
+    2048, 1997, 1947, 1897, 1847, 1797, 1747, 1697, 1648, 1599, 1550, 1501,
+    1453, 1405, 1358, 1311, 1264, 1218, 1172, 1127, 1082, 1038,  995,  952,
+     910,  869,  828,  788,  749,  710,  672,  636,  600,  565,  530,  497,
+     465,  433,  403,  373,  345,  318,  291,  266,  242,  219,  197,  176,
+     156,  137,  120,  103,   88,   74,   61,   50,   39,   30,   22,   15,
+      10,    6,    2,    1,
+};
+
+/**
+ * Next DAC sample of the tone being played, at audio_volume percent of the full
+ * scale. Overrides the weak dac_value_generate() of
+ * platforms/chibios/drivers/audio_dac_additive.c, which calls it from its DAC
+ * callback dac_end() for every sample while a sound plays, and waits for a
+ * sample close to AUDIO_DAC_OFF_VALUE before it changes or stops the tone.
+ *
+ * The phase step is the driver's, frequency * 256 / AUDIO_DAC_SAMPLE_RATE *
+ * 2/3: its timer runs at 3 * AUDIO_DAC_SAMPLE_RATE and the callback fires twice
+ * per conversion. A rest (frequency 0) or the end of the sound lets the current
+ * wave run on until it reaches silence, so the speaker does not click.
+ */
+uint16_t dac_value_generate(void) {
+    static float phase     = 0.0f;
+    static float frequency = 0.0f;
+    const int32_t off      = AUDIO_DAC_OFF_VALUE;
+    float playing = audio_get_number_of_active_tones() ?
+        audio_get_processed_frequency(0) : 0.0f;
+    if (playing > 0.0f) {
+        frequency = playing;
+    } else if (frequency <= 0.0f) {
+        return off;
+    }
+    phase += frequency * (256.0f / AUDIO_DAC_SAMPLE_RATE * 2.0f / 3.0f);
+    while (phase >= 256.0f) {
+        phase -= 256.0f;
+    }
+    int32_t wave = ((int32_t)dac_sine[(uint8_t)phase] - off) * audio_volume;
+    wave /= 100;
+    if (playing <= 0.0f && wave < (int32_t)(AUDIO_DAC_SAMPLE_MAX / 100) &&
+        wave > -(int32_t)(AUDIO_DAC_SAMPLE_MAX / 100)) {
+        frequency = 0.0f;
+        return off;
+    }
+    return off + wave;
 }
 
 /**
@@ -771,8 +934,18 @@ static void jiggle_set_radius(int16_t radius) {
  */
 void matrix_scan_user(void) {
     if (jiggle_active && timer_elapsed(jiggle_timer) >= jiggle_delay) {
-        jiggle_timer = timer_read();
+        // Steps on a fixed grid of jiggle_delay ms, so the scan latency does
+        // not add up; a late scan resets the grid instead of catching up.
+        jiggle_timer += jiggle_delay;
+        if (timer_elapsed(jiggle_timer) >= jiggle_delay) {
+            jiggle_timer = timer_read();
+        }
         jiggle_step();
+    }
+    jiggle_delay_repeat();
+    if (audio_volume != 100 &&
+        timer_elapsed(audio_volume_timer) >= JIGGLE_ON_SOUND_MS) {
+        audio_volume = 100;
     }
     if (rapid_fire_1 || rapid_fire_2) {
         rapid_fire_wait_counter++;
@@ -1083,17 +1256,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         case M_JG_TOG:
             if (!jiggle_active) {
+                audio_volume       = AUDIO_QUIET_PERCENT;
+                audio_volume_timer = timer_read();
                 PLAY_SONG(jiggle_on_sound);
-                jiggle_x = 0;
-                jiggle_y = 0;
-                jiggle_move(jiggle_radius, 0);
+                jiggle_fit();
                 jiggle_active = true;
                 jiggle_timer  = timer_read();
             } else {
                 PLAY_SONG(jiggle_off_sound);
                 jiggle_active = false;
-                jiggle_move(-jiggle_x, -jiggle_y);
-                jiggle_click = false;
             }
             return false;
         case M_JG_RUP:
@@ -1121,22 +1292,22 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
         case M_JG_DUP:
-            if (jiggle_delay < JIGGLE_DELAY_MAX) {
-                jiggle_delay += jiggle_step_size(jiggle_delay, true);
-            } else {
-                PLAY_SONG(jiggle_delay_max_sound);
-            }
-            return false;
         case M_JG_DDN:
-            if (jiggle_delay > JIGGLE_DELAY_MIN) {
-                jiggle_delay -= jiggle_step_size(jiggle_delay, false);
-            } else {
-                PLAY_SONG(jiggle_delay_min_sound);
-            }
+            jiggle_delay_dir     = keycode == M_JG_DUP ? 1 : -1;
+            jiggle_delay_held    = false;
+            jiggle_delay_stopped = false;
+            jiggle_delay_pressed = timer_read();
             return false;
         }
     } else { // key released
         switch (keycode) {
+        case M_JG_DUP:
+        case M_JG_DDN:
+            if (jiggle_delay_dir && !jiggle_delay_held) {
+                jiggle_delay_add(jiggle_delay_dir * JIGGLE_DELAY_TAP_MS);
+            }
+            jiggle_delay_dir = 0;
+            return false;
         case RF_MOUSE1:
         case RF_MOUSE2:
         case RF_MOUSE3:
