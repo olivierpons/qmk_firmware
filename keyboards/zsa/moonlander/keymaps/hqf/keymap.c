@@ -22,8 +22,9 @@
  *    TD(TD_ATG); triple tap TD(TD_ATG): Syntax Terror intro theme).
  * L1 (hold MO(L_1)): F1-F12, \ { } ~ | / @ < > [ ] # %, arrows, word jumps,
  *    Home/End/PgUp/PgDn, 2 emails, Ctrl+Alt+K dictation, circle mouse jiggler
- *    (left thumbs: radius +/-, click off; left red key: click on; bottom left
- *    keys: delay -/+; right thumb next to Ctrl+Alt+K: on; right red key: off).
+ *    (left thumbs: radius +/-, click on/off; left red key: click on/off;
+ *    bottom left keys: delay -/+; right thumb next to Ctrl+Alt+K: on; right
+ *    red key: off).
  * L2 (hold MO(L_2)): numpad, Caps/Num Lock, â ê î ô û ù ``, 2 signatures,
  *    Linux desktop left/right/maximize, Ctrl+[ Ctrl+].
  * L3 (hold MO(L_3)): copy/cut/paste as Ctrl+C/V, Ctrl+Shift+C/V, Ctrl+Ins/
@@ -283,8 +284,7 @@ enum custom_keycodes {
     M_JG_OFF,
     M_JG_RUP,
     M_JG_RDN,
-    M_JG_CON,
-    M_JG_COF,
+    M_JG_CLK,
     M_JG_DUP,
     M_JG_DDN,
 };
@@ -395,12 +395,13 @@ float syntax_terror_intro    [][2] = SONG(
     M__NOTE(_C5, 51), M__NOTE(_AS4, 26), M__NOTE(_AS4, 26), M__NOTE(_G4, 51),
     M__NOTE(_AS4, 51), M__NOTE(_C5, 51), M__NOTE(_AS4, 154));
 
-// Mouse jiggler: A6 when it starts, A3 when it stops, E6 / E4 when the bottom
-// right click is armed / disarmed.
+// Mouse jiggler: A6 when it starts, A3 when it stops. Bottom right click: A7
+// (3520 Hz) when armed, C4 (262 Hz) held twice as long when disarmed, low
+// enough to tell apart and still loud enough on the keyboard speaker.
 float jiggle_on_sound        [][2] = SONG(Q__NOTE(_A6));
 float jiggle_off_sound       [][2] = SONG(Q__NOTE(_A3));
-float jiggle_click_on_sound  [][2] = SONG(Q__NOTE(_E6));
-float jiggle_click_off_sound [][2] = SONG(Q__NOTE(_E4));
+float jiggle_click_on_sound  [][2] = SONG(Q__NOTE(_A7));
+float jiggle_click_off_sound [][2] = SONG(H__NOTE(_C4));
 
 /**
  * Mouse jiggler: the cursor runs clockwise around a circle, one pixel every
@@ -421,9 +422,9 @@ float jiggle_click_off_sound [][2] = SONG(Q__NOTE(_E4));
  * screen edge that stops the cursor eats part of the move and shifts the
  * center.
  *
- * M_JG_CON arms a left click each time the cursor crosses the bottom right
- * point of the circle, 45 degrees below its rightmost point, i.e. 1/8 of a turn
- * after the start. M_JG_COF disarms it, and so does M_JG_OFF.
+ * M_JG_CLK arms or disarms a left click each time the cursor crosses the bottom
+ * right point of the circle, 45 degrees below its rightmost point, i.e. 1/8 of
+ * a turn after the start. M_JG_OFF disarms it too.
  */
 // Delay: 100 ms per M_JG_DUP / M_JG_DDN press, and a single press between
 // 100 ms and 1 ms, the fastest (one pixel per millisecond).
@@ -482,12 +483,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* ┃ Delay - │    <    │    @    │    >    │    [    │    ]    ┃                       ┃   n N   │   Bspc  │   Del   │  PgDn   │         │ RShft ⇧ ┃ */
        M_JG_DDN, KC_NUBS ,  M_ARB  ,  M_GT   ,  M_OSB  ,  M_CSB  ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃ Delay + │         │         │         │         ┃          ┃Click on ┃ ┃ Jig off ┃          ┃   Spc   │         │         │         │         ┃ */
-       M_JG_DUP, _______ , _______ , _______ , _______ ,            M_JG_CON,   M_JG_OFF,            KC_SPC  , _______ , _______ , _______ , _______ ,
+  /* ┃ Delay + │         │         │         │         ┃          ┃ Click ↘ ┃ ┃ Jig off ┃          ┃   Spc   │         │         │         │         ┃ */
+       M_JG_DUP, _______ , _______ , _______ , _______ ,            M_JG_CLK,   M_JG_OFF,            KC_SPC  , _______ , _______ , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━╃─────────┨ ┠─────────╄━━━━━━━━━┯━━━━━━━━━┓                                          */
-  /*                                          ┃Radius + │Radius - │Click off┃ ┃CtlAlt K │ Jig on  │         ┃                                          */
-                                                M_JG_RUP, M_JG_RDN, M_JG_COF,   C_Alt_K , M_JG_ON , _______
+  /*                                          ┃Radius + │Radius - │ Click ↘ ┃ ┃CtlAlt K │ Jig on  │         ┃                                          */
+                                                M_JG_RUP, M_JG_RDN, M_JG_CLK,   C_Alt_K , M_JG_ON , _______
   /*                                          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛                                          */
     ),
 
@@ -1102,13 +1103,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 PLAY_SONG(colemak_sound);
             }
             return false;
-        case M_JG_CON:
-            jiggle_click = true;
-            PLAY_SONG(jiggle_click_on_sound);
-            return false;
-        case M_JG_COF:
-            jiggle_click = false;
-            PLAY_SONG(jiggle_click_off_sound);
+        case M_JG_CLK:
+            jiggle_click = !jiggle_click;
+            if (jiggle_click) {
+                PLAY_SONG(jiggle_click_on_sound);
+            } else {
+                PLAY_SONG(jiggle_click_off_sound);
+            }
             return false;
         case M_JG_DUP:
             if (jiggle_delay == JIGGLE_DELAY_MIN) {
