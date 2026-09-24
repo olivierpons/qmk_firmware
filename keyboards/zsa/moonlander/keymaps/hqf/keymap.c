@@ -22,9 +22,8 @@
  *    TD(TD_ATG); triple tap TD(TD_ATG): Syntax Terror intro theme).
  * L1 (hold MO(L_1)): F1-F12, \ { } ~ | / @ < > [ ] # %, arrows, word jumps,
  *    Home/End/PgUp/PgDn, 2 emails, Ctrl+Alt+K dictation, circle mouse jiggler
- *    (left thumbs: radius +/-, click on/off; left red key: click on/off;
- *    bottom left keys: delay -/+; right thumb next to Ctrl+Alt+K: on; right
- *    red key: off).
+ *    (bottom left row: delay +/-, click on/off, radius +/-; right thumb next
+ *    to Ctrl+Alt+K: on/off).
  * L2 (hold MO(L_2)): numpad, Caps/Num Lock, â ê î ô û ù ``, 2 signatures,
  *    Linux desktop left/right/maximize, Ctrl+[ Ctrl+].
  * L3 (hold MO(L_3)): copy/cut/paste as Ctrl+C/V, Ctrl+Shift+C/V, Ctrl+Ins/
@@ -280,8 +279,7 @@ enum custom_keycodes {
     RF_MOUSE3,
     RF_SPACE,
     // Mouse jiggling
-    M_JG_ON,
-    M_JG_OFF,
+    M_JG_TOG,
     M_JG_RUP,
     M_JG_RDN,
     M_JG_CLK,
@@ -395,19 +393,32 @@ float syntax_terror_intro    [][2] = SONG(
     M__NOTE(_C5, 51), M__NOTE(_AS4, 26), M__NOTE(_AS4, 26), M__NOTE(_G4, 51),
     M__NOTE(_AS4, 51), M__NOTE(_C5, 51), M__NOTE(_AS4, 154));
 
-// Mouse jiggler: A6 when it starts, A3 when it stops. Bottom right click: A7
-// (3520 Hz) when armed, C4 (262 Hz) held twice as long when disarmed, low
-// enough to tell apart and still loud enough on the keyboard speaker.
-float jiggle_on_sound        [][2] = SONG(Q__NOTE(_A6));
-float jiggle_off_sound       [][2] = SONG(Q__NOTE(_A3));
-float jiggle_click_on_sound  [][2] = SONG(Q__NOTE(_A7));
-float jiggle_click_off_sound [][2] = SONG(H__NOTE(_C4));
+/**
+ * Mouse jiggler sounds, all different from each other. On/off: one long note,
+ * high (E7, 2637 Hz) when it starts, low (E4, 330 Hz) when it stops. Bottom
+ * right click: two short notes, high (A7, 3520 Hz) when armed, low (C4, 262 Hz)
+ * when disarmed. The low notes stay above 250 Hz to remain audible on the
+ * keyboard speaker. Radius at its limit: two notes, rising at the maximum,
+ * falling at the minimum. Delay at its limit: three notes, same directions.
+ */
+float jiggle_on_sound         [][2] = SONG(H__NOTE(_E7));
+float jiggle_off_sound        [][2] = SONG(H__NOTE(_E4));
+float jiggle_click_on_sound   [][2] = SONG(Q__NOTE(_A7), E__NOTE(_REST),
+                                           Q__NOTE(_A7));
+float jiggle_click_off_sound  [][2] = SONG(Q__NOTE(_C4), E__NOTE(_REST),
+                                           Q__NOTE(_C4));
+float jiggle_radius_max_sound [][2] = SONG(E__NOTE(_C6), Q__NOTE(_G6));
+float jiggle_radius_min_sound [][2] = SONG(E__NOTE(_G5), Q__NOTE(_C5));
+float jiggle_delay_max_sound  [][2] = SONG(E__NOTE(_C6), E__NOTE(_E6),
+                                           Q__NOTE(_G6));
+float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
+                                           Q__NOTE(_C5));
 
 /**
  * Mouse jiggler: the cursor runs clockwise around a circle, one pixel every
  * jiggle_delay ms, starting from its rightmost point. The center is where the
- * cursor stood when M_JG_ON was pressed, and M_JG_OFF brings the cursor back
- * there. M_JG_RUP / M_JG_RDN change the radius, also while it runs: the cursor
+ * cursor stood when M_JG_TOG started it, and M_JG_TOG brings the cursor back
+ * there when it stops it. M_JG_RUP / M_JG_RDN change the radius, also while it runs: the cursor
  * then moves along its radius to the new circle. M_JG_DUP / M_JG_DDN lengthen /
  * shorten the delay.
  *
@@ -424,7 +435,7 @@ float jiggle_click_off_sound [][2] = SONG(H__NOTE(_C4));
  *
  * M_JG_CLK arms or disarms a left click each time the cursor crosses the bottom
  * right point of the circle, 45 degrees below its rightmost point, i.e. 1/8 of
- * a turn after the start. M_JG_OFF disarms it too.
+ * a turn after the start. Stopping the jiggler disarms it too.
  */
 // Delay: 100 ms per M_JG_DUP / M_JG_DDN press, and a single press between
 // 100 ms and 1 ms, the fastest (one pixel per millisecond).
@@ -483,12 +494,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* ┃         │    <    │    @    │    >    │    [    │    ]    ┃                       ┃   n N   │   Bspc  │   Del   │  PgDn   │         │ RShft ⇧ ┃ */
        _______ , KC_NUBS ,  M_ARB  ,  M_GT   ,  M_OSB  ,  M_CSB  ,                         _______ , KC_BSPC , KC_DEL  , KC_PGDN , _______ , _______ ,
   /* ┠─────────┼─────────┼─────────┼─────────┼─────────┲━━━━━━━━━┛┏━━━━━━━━━┓ ┏━━━━━━━━━┓┗━━━━━━━━━┱─────────┼─────────┼─────────┼─────────┼─────────┨ */
-  /* ┃ Delay + │ Delay - │ Click ↘ │Radius + │Radius - ┃          ┃         ┃ ┃ Jig off ┃          ┃   Spc   │         │         │         │         ┃ */
-       M_JG_DUP, M_JG_DDN, M_JG_CLK, M_JG_RUP, M_JG_RDN,            _______ ,   M_JG_OFF,            KC_SPC  , _______ , _______ , _______ , _______ ,
+  /* ┃ Delay + │ Delay - │ Click ↘ │Radius + │Radius - ┃          ┃         ┃ ┃         ┃          ┃   Spc   │         │         │         │         ┃ */
+       M_JG_DUP, M_JG_DDN, M_JG_CLK, M_JG_RUP, M_JG_RDN,            _______ ,   _______ ,            KC_SPC  , _______ , _______ , _______ , _______ ,
   /* ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛          ┠─────────┨ ┠─────────┨          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ */
   /*                                          ┏━━━━━━━━━┯━━━━━━━━━╃─────────┨ ┠─────────╄━━━━━━━━━┯━━━━━━━━━┓                                          */
-  /*                                          ┃         │         │         ┃ ┃CtlAlt K │ Jig on  │         ┃                                          */
-                                                _______ , _______ , _______ ,   C_Alt_K , M_JG_ON , _______
+  /*                                          ┃         │         │         ┃ ┃CtlAlt K │ Jig tog │         ┃                                          */
+                                                _______ , _______ , _______ ,   C_Alt_K , M_JG_TOG, _______
   /*                                          ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛ ┗━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┛                                          */
     ),
 
@@ -1071,36 +1082,33 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             SEND_STRING(SS_DOWN(X_LCTL) SS_DOWN(X_LALT) SS_TAP(X_RIGHT) \
                 SS_UP(X_LALT) SS_UP(X_LCTL));
             return false;
-        case M_JG_ON:
-            PLAY_SONG(jiggle_on_sound);
+        case M_JG_TOG:
             if (!jiggle_active) {
+                PLAY_SONG(jiggle_on_sound);
                 jiggle_x = 0;
                 jiggle_y = 0;
                 jiggle_move(jiggle_radius, 0);
                 jiggle_active = true;
                 jiggle_timer  = timer_read();
-            }
-            return false;
-        case M_JG_OFF:
-            PLAY_SONG(jiggle_off_sound);
-            if (jiggle_active) {
+            } else {
+                PLAY_SONG(jiggle_off_sound);
                 jiggle_active = false;
                 jiggle_move(-jiggle_x, -jiggle_y);
+                jiggle_click = false;
             }
-            jiggle_click = false;
             return false;
         case M_JG_RUP:
             if (jiggle_radius < JIGGLE_RADIUS_MAX) {
                 jiggle_set_radius(jiggle_radius + jiggle_radius_step(true));
             } else {
-                PLAY_SONG(dvorak_sound);
+                PLAY_SONG(jiggle_radius_max_sound);
             }
             return false;
         case M_JG_RDN:
             if (jiggle_radius > JIGGLE_RADIUS_MIN) {
                 jiggle_set_radius(jiggle_radius - jiggle_radius_step(false));
             } else {
-                PLAY_SONG(colemak_sound);
+                PLAY_SONG(jiggle_radius_min_sound);
             }
             return false;
         case M_JG_CLK:
@@ -1117,7 +1125,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             } else if (jiggle_delay < JIGGLE_DELAY_MAX) {
                 jiggle_delay += JIGGLE_DELAY_STEP;
             } else {
-                PLAY_SONG(dvorak_sound);
+                PLAY_SONG(jiggle_delay_max_sound);
             }
             return false;
         case M_JG_DDN:
@@ -1126,7 +1134,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             } else if (jiggle_delay > JIGGLE_DELAY_MIN) {
                 jiggle_delay = JIGGLE_DELAY_MIN;
             } else {
-                PLAY_SONG(colemak_sound);
+                PLAY_SONG(jiggle_delay_min_sound);
             }
             return false;
         }
