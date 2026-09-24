@@ -425,8 +425,9 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
  * circle. Radius, delay, click and position are kept from one run to the next.
  * M_JG_RUP / M_JG_RDN change the radius, also while it runs: the cursor then
  * moves along its radius to the new circle. M_JG_DUP / M_JG_DDN lengthen /
- * shorten the delay: a tap changes it by 1 ms, a key held past TAPPING_TERM
- * changes it by 10 ms per repeat, repeats coming faster and faster.
+ * shorten the delay. On these four keys, a tap changes the value by 1 (pixel
+ * or ms), a key held past TAPPING_TERM changes it by 10 per repeat, repeats
+ * coming faster and faster.
  *
  * Each step goes to the neighbour pixel (8-connected) along the tangent that
  * stays closest to x^2 + y^2 = r^2, so the cursor follows every pixel of the
@@ -448,8 +449,9 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
 #define JIGGLE_DELAY_DEFAULT  1000
 #define JIGGLE_DELAY_MIN      1
 #define JIGGLE_DELAY_MAX      10000
-#define JIGGLE_DELAY_TAP_MS   1  // change of a tap
-#define JIGGLE_DELAY_HOLD_MS  10 // change of each repeat while held
+// Change of the radius or the delay: a tap, each repeat while held.
+#define JIGGLE_TAP_STEP       1
+#define JIGGLE_HOLD_STEP      10
 // Repeats while held: the first one TAPPING_TERM after the press, the next ones
 // JIGGLE_REPEAT_FIRST_MS apart, each gap 1/8 shorter, down to
 // JIGGLE_REPEAT_LAST_MS.
@@ -468,11 +470,11 @@ static int16_t  jiggle_y      = 0;
 static int16_t  jiggle_on     = 0; // radius of (jiggle_x, jiggle_y), 0: never
 static uint16_t jiggle_timer  = 0;
 
-// Delay key held: +1 (M_JG_DUP), -1 (M_JG_DDN), 0 = none.
-static int8_t   jiggle_delay_dir     = 0;
-static bool     jiggle_delay_held    = false; // held past TAPPING_TERM
-static bool     jiggle_delay_stopped = false; // limit reached while held
-static uint16_t jiggle_delay_pressed = 0;
+// Radius or delay key pressed (M_JG_RUP/RDN/DUP/DDN), 0 = none.
+static uint16_t jiggle_key         = 0;
+static bool     jiggle_key_held    = false; // held past TAPPING_TERM
+static bool     jiggle_key_stopped = false; // limit reached while held
+static uint16_t jiggle_key_pressed = 0;
 static uint16_t jiggle_repeat_timer  = 0;
 static uint16_t jiggle_repeat_ms     = 0;
 
@@ -775,16 +777,6 @@ static void jiggle_step(void) {
 }
 
 /**
- * Change of one press on the radius keys (M_JG_RUP / M_JG_RDN): 100 from 100
- * up, 10 from 10 up, 1 below, so the radius goes 900 ... 100, 90 ... 10, 9 ...
- * 1 and back up through the same values.
- */
-static uint16_t jiggle_step_size(uint16_t value, bool up) {
-    uint16_t floor = up ? value : value - 1;
-    return floor >= 100 ? 100 : (floor >= 10 ? 10 : 1);
-}
-
-/**
  * Moves the cursor along its radius from the circle of radius jiggle_on to the
  * one of radius jiggle_radius. The first time, jiggle_on is 0 and the cursor
  * goes from the center to the rightmost point of the circle.
@@ -800,12 +792,32 @@ static void jiggle_fit(void) {
     jiggle_on = jiggle_radius;
 }
 
-// Sets the radius; while the jiggler runs, the cursor moves to the new circle.
-static void jiggle_set_radius(int16_t radius) {
+/**
+ * Adds step pixels (removes if negative) to jiggle_radius, kept within
+ * JIGGLE_RADIUS_MIN and JIGGLE_RADIUS_MAX; while the jiggler runs, the cursor
+ * moves to the new circle. Already at that limit: plays its sound and returns
+ * false.
+ */
+static bool jiggle_radius_add(int16_t step) {
+    if (step > 0 && jiggle_radius >= JIGGLE_RADIUS_MAX) {
+        PLAY_SONG(jiggle_radius_max_sound);
+        return false;
+    }
+    if (step < 0 && jiggle_radius <= JIGGLE_RADIUS_MIN) {
+        PLAY_SONG(jiggle_radius_min_sound);
+        return false;
+    }
+    int32_t radius = (int32_t)jiggle_radius + step;
+    if (radius > JIGGLE_RADIUS_MAX) {
+        radius = JIGGLE_RADIUS_MAX;
+    } else if (radius < JIGGLE_RADIUS_MIN) {
+        radius = JIGGLE_RADIUS_MIN;
+    }
     jiggle_radius = radius;
     if (jiggle_active) {
         jiggle_fit();
     }
+    return true;
 }
 
 /**
@@ -832,17 +844,35 @@ static bool jiggle_delay_add(int16_t step) {
     return true;
 }
 
-// Key repeat of a held M_JG_DUP / M_JG_DDN, called on every matrix scan.
-static void jiggle_delay_repeat(void) {
-    if (!jiggle_delay_dir || jiggle_delay_stopped) {
+/**
+ * Changes by amount the value of a radius or delay key: up for M_JG_RUP /
+ * M_JG_DUP, down for M_JG_RDN / M_JG_DDN. Returns false at the limit.
+ */
+static bool jiggle_key_add(uint16_t keycode, int16_t amount) {
+    switch (keycode) {
+        case M_JG_RUP:
+            return jiggle_radius_add(amount);
+        case M_JG_RDN:
+            return jiggle_radius_add(-amount);
+        case M_JG_DUP:
+            return jiggle_delay_add(amount);
+        case M_JG_DDN:
+            return jiggle_delay_add(-amount);
+    }
+    return false;
+}
+
+// Key repeat of a held radius or delay key, called on every matrix scan.
+static void jiggle_key_repeat(void) {
+    if (!jiggle_key || jiggle_key_stopped) {
         return;
     }
-    if (!jiggle_delay_held) {
-        if (timer_elapsed(jiggle_delay_pressed) < TAPPING_TERM) {
+    if (!jiggle_key_held) {
+        if (timer_elapsed(jiggle_key_pressed) < TAPPING_TERM) {
             return;
         }
-        jiggle_delay_held = true;
-        jiggle_repeat_ms  = JIGGLE_REPEAT_FIRST_MS;
+        jiggle_key_held  = true;
+        jiggle_repeat_ms = JIGGLE_REPEAT_FIRST_MS;
     } else if (timer_elapsed(jiggle_repeat_timer) < jiggle_repeat_ms) {
         return;
     } else if (jiggle_repeat_ms > JIGGLE_REPEAT_LAST_MS) {
@@ -852,8 +882,8 @@ static void jiggle_delay_repeat(void) {
         }
     }
     jiggle_repeat_timer = timer_read();
-    if (!jiggle_delay_add(jiggle_delay_dir * JIGGLE_DELAY_HOLD_MS)) {
-        jiggle_delay_stopped = true;
+    if (!jiggle_key_add(jiggle_key, JIGGLE_HOLD_STEP)) {
+        jiggle_key_stopped = true;
     }
 }
 
@@ -942,7 +972,7 @@ void matrix_scan_user(void) {
         }
         jiggle_step();
     }
-    jiggle_delay_repeat();
+    jiggle_key_repeat();
     if (audio_volume != 100 &&
         timer_elapsed(audio_volume_timer) >= JIGGLE_ON_SOUND_MS) {
         audio_volume = 100;
@@ -1267,22 +1297,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 jiggle_active = false;
             }
             return false;
-        case M_JG_RUP:
-            if (jiggle_radius < JIGGLE_RADIUS_MAX) {
-                jiggle_set_radius(
-                    jiggle_radius + jiggle_step_size(jiggle_radius, true));
-            } else {
-                PLAY_SONG(jiggle_radius_max_sound);
-            }
-            return false;
-        case M_JG_RDN:
-            if (jiggle_radius > JIGGLE_RADIUS_MIN) {
-                jiggle_set_radius(
-                    jiggle_radius - jiggle_step_size(jiggle_radius, false));
-            } else {
-                PLAY_SONG(jiggle_radius_min_sound);
-            }
-            return false;
         case M_JG_CTG:
             jiggle_click = !jiggle_click;
             if (jiggle_click) {
@@ -1291,22 +1305,28 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 PLAY_SONG(jiggle_click_off_sound);
             }
             return false;
+        case M_JG_RUP:
+        case M_JG_RDN:
         case M_JG_DUP:
         case M_JG_DDN:
-            jiggle_delay_dir     = keycode == M_JG_DUP ? 1 : -1;
-            jiggle_delay_held    = false;
-            jiggle_delay_stopped = false;
-            jiggle_delay_pressed = timer_read();
+            jiggle_key         = keycode;
+            jiggle_key_held    = false;
+            jiggle_key_stopped = false;
+            jiggle_key_pressed = timer_read();
             return false;
         }
     } else { // key released
         switch (keycode) {
+        case M_JG_RUP:
+        case M_JG_RDN:
         case M_JG_DUP:
         case M_JG_DDN:
-            if (jiggle_delay_dir && !jiggle_delay_held) {
-                jiggle_delay_add(jiggle_delay_dir * JIGGLE_DELAY_TAP_MS);
+            if (jiggle_key == keycode && !jiggle_key_held) {
+                jiggle_key_add(keycode, JIGGLE_TAP_STEP);
             }
-            jiggle_delay_dir = 0;
+            if (jiggle_key == keycode) {
+                jiggle_key = 0;
+            }
             return false;
         case RF_MOUSE1:
         case RF_MOUSE2:
