@@ -22,8 +22,8 @@
  *    TD(TD_ATG); triple tap TD(TD_ATG): Syntax Terror intro theme).
  * L1 (hold MO(L_1)): F1-F12, \ { } ~ | / @ < > [ ] # %, arrows, word jumps,
  *    Home/End/PgUp/PgDn, 2 emails, Ctrl+Alt+K dictation, circle mouse jiggler
- *    (bottom left row: delay +/-, click on/off, radius +/-; right thumb next
- *    to Ctrl+Alt+K: on/off).
+ *    (bottom left row: delay +/-, click N/NE/.../NW/off, radius +/-; right
+ *    thumb next to Ctrl+Alt+K: on/off).
  * L2 (hold MO(L_2)): numpad, Caps/Num Lock, â ê î ô û ù ``, 2 signatures,
  *    Linux desktop left/right/maximize, Ctrl+[ Ctrl+].
  * L3 (hold MO(L_3)): copy/cut/paste as Ctrl+C/V, Ctrl+Shift+C/V, Ctrl+Ins/
@@ -432,7 +432,7 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
  * M_JG_RUP / M_JG_RDN change the radius, also while it runs: the cursor then
  * moves along its radius to the new circle. M_JG_DUP / M_JG_DDN lengthen /
  * shorten the delay. On these four keys, a tap changes the value by 1, a key
- * held past TAPPING_TERM changes it by 10 per repeat, repeats coming faster
+ * held past JIGGLE_HOLD_MS changes it by 10 per repeat, repeats coming faster
  * and faster. The unit is the pixel for the radius; for the delay it is the
  * millisecond from 1 ms up, and one pixel per millisecond below: 1 ms, then 2,
  * 3 ... 100 pixels per millisecond.
@@ -473,8 +473,11 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
 // Change of the radius or the delay: a tap, each repeat while held.
 #define JIGGLE_TAP_STEP       1
 #define JIGGLE_HOLD_STEP      10
-// Repeats while held: the first one TAPPING_TERM after the press, the next ones
-// JIGGLE_REPEAT_FIRST_MS apart, each gap 1/8 shorter, down to
+// A key released within JIGGLE_HOLD_MS is a tap: a quick press, as when typing
+// a letter, lasts less.
+#define JIGGLE_HOLD_MS        120
+// Repeats while held: the first one JIGGLE_HOLD_MS after the press, the next
+// ones JIGGLE_REPEAT_FIRST_MS apart, each gap 1/8 shorter, down to
 // JIGGLE_REPEAT_LAST_MS.
 #define JIGGLE_REPEAT_FIRST_MS 200
 #define JIGGLE_REPEAT_LAST_MS  10
@@ -501,7 +504,7 @@ static const int8_t jiggle_click_dir[8][2] = {
 
 // Radius or delay key pressed (M_JG_RUP/RDN/DUP/DDN), 0 = none.
 static uint16_t jiggle_key         = 0;
-static bool     jiggle_key_held    = false; // held past TAPPING_TERM
+static bool     jiggle_key_held    = false; // held past JIGGLE_HOLD_MS
 static bool     jiggle_key_stopped = false; // limit reached while held
 static uint16_t jiggle_key_pressed = 0;
 static uint16_t jiggle_repeat_timer  = 0;
@@ -949,7 +952,7 @@ static void jiggle_key_repeat(void) {
         return;
     }
     if (!jiggle_key_held) {
-        if (timer_elapsed(jiggle_key_pressed) < TAPPING_TERM) {
+        if (timer_elapsed(jiggle_key_pressed) < JIGGLE_HOLD_MS) {
             return;
         }
         jiggle_key_held  = true;
