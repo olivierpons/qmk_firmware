@@ -26,7 +26,7 @@
  * The sample rate is spelled out because defining the tone count alone turns
  * off the AUDIO_DAC_QUALITY_SANE_MINIMUM preset that audio_dac.h picks when
  * nothing is set, which would raise the rate to 44100 Hz. 16384 Hz keeps a
- * 64 sample buffer and covers every note played here (highest: 3520 Hz).
+ * 64 sample buffer and covers every note played here (highest: 3322 Hz).
  *
  * Not to be confused with config.local.h, the gitignored personal strings
  * included by keymap.c.

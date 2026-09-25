@@ -395,19 +395,25 @@ float syntax_terror_intro    [][2] = SONG(
 
 /**
  * Mouse jiggler sounds, all different from each other. On/off: one long note,
- * high (E7, 2637 Hz) when it starts, low (E4, 330 Hz) when it stops. Bottom
- * right click: two short notes, high (A7, 3520 Hz) when armed, low (C4, 262 Hz)
- * when disarmed. The low notes stay above 250 Hz to remain audible on the
- * keyboard speaker. Radius at its limit: two notes, rising at the maximum,
- * falling at the minimum. Delay at its limit: three notes, same directions.
+ * high (E7, 2637 Hz) when it starts, low (E4, 330 Hz) when it stops. Click
+ * point (M_JG_CTG): two short notes, one step higher on the C major scale for
+ * each direction, C6 for north up to C7 for north west, and C4 (262 Hz) when
+ * the click is turned off. The low notes stay above 250 Hz to remain audible
+ * on the keyboard speaker. Radius at its limit: two notes, rising at the
+ * maximum, falling at the minimum. Delay at its limit: three notes, same
+ * directions.
  */
 float jiggle_on_sound         [][2] = SONG(H__NOTE(_E7));
 // Length of jiggle_on_sound, an H__NOTE at the default tempo of 120:
 // 32 * 1875 / (120 * 2) ms, see audio_duration_to_ms().
 #define JIGGLE_ON_SOUND_MS    250
 float jiggle_off_sound        [][2] = SONG(H__NOTE(_E4));
-float jiggle_click_on_sound   [][2] = SONG(Q__NOTE(_A7), E__NOTE(_REST),
-                                           Q__NOTE(_A7));
+// Both notes are set to the direction's pitch before each play.
+float jiggle_click_sound      [][2] = SONG(Q__NOTE(_C6), E__NOTE(_REST),
+                                           Q__NOTE(_C6));
+static const float jiggle_click_notes[8] = {
+    NOTE_C6, NOTE_D6, NOTE_E6, NOTE_F6, NOTE_G6, NOTE_A6, NOTE_B6, NOTE_C7,
+};
 float jiggle_click_off_sound  [][2] = SONG(Q__NOTE(_C4), E__NOTE(_REST),
                                            Q__NOTE(_C4));
 float jiggle_radius_max_sound [][2] = SONG(E__NOTE(_C6), Q__NOTE(_G6));
@@ -419,15 +425,22 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
 
 /**
  * Mouse jiggler: the cursor runs clockwise around a circle, one pixel every
- * jiggle_delay ms, starting from its rightmost point. The center is where the
+ * jiggle_period, starting from its rightmost point. The center is where the
  * cursor stood when M_JG_TOG first started it. M_JG_TOG stops it and leaves
  * the cursor where it is; started again, it goes on from that point of the
  * circle. Radius, delay, click and position are kept from one run to the next.
  * M_JG_RUP / M_JG_RDN change the radius, also while it runs: the cursor then
  * moves along its radius to the new circle. M_JG_DUP / M_JG_DDN lengthen /
- * shorten the delay. On these four keys, a tap changes the value by 1 (pixel
- * or ms), a key held past TAPPING_TERM changes it by 10 per repeat, repeats
- * coming faster and faster.
+ * shorten the delay. On these four keys, a tap changes the value by 1, a key
+ * held past TAPPING_TERM changes it by 10 per repeat, repeats coming faster
+ * and faster. The unit is the pixel for the radius; for the delay it is the
+ * millisecond from 1 ms up, and one pixel per millisecond below: 1 ms, then 2,
+ * 3 ... 100 pixels per millisecond.
+ *
+ * The host reads the mouse every USB_POLLING_INTERVAL_MS (1 ms), so the steps
+ * due within a millisecond go out as one report of several pixels: that is how
+ * the delay goes below 1 ms. One report per millisecond at most also keeps the
+ * mouse endpoint queue from filling up, which would block the keyboard.
  *
  * Each step goes to the neighbour pixel (8-connected) along the tangent that
  * stays closest to x^2 + y^2 = r^2, so the cursor follows every pixel of the
@@ -440,15 +453,23 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
  * screen edge that stops the cursor eats part of the move and shifts the
  * center.
  *
- * M_JG_CTG arms or disarms a left click each time the cursor crosses the bottom
- * right point of the circle, 45 degrees below its rightmost point, i.e. 1/8 of
- * a turn after the start.
+ * M_JG_CTG picks where a left click happens each time the cursor crosses it:
+ * each press moves on to the next point of the circle, north (top), north east,
+ * east, south east, south, south west, west, north west, then no click, then
+ * north again.
  */
-// Delay: jiggle_delay, the only delay, read by matrix_scan_user() and changed
-// by M_JG_DUP / M_JG_DDN between 1 ms and 10 s.
-#define JIGGLE_DELAY_DEFAULT  1000
-#define JIGGLE_DELAY_MIN      1
-#define JIGGLE_DELAY_MAX      10000
+/**
+ * Delay: jiggle_period, the only delay, read by matrix_scan_user() and changed
+ * by M_JG_DUP / M_JG_DDN, in units of 10 ns (JIGGLE_MS per millisecond), from
+ * 1 s / JIGGLE_PER_MS_MAX to 10 s. Below 1 ms it is JIGGLE_MS / n for n pixels
+ * per millisecond; 10 ns units keep n exact once read back, up to 100.
+ */
+#define JIGGLE_MS             100000UL
+#define JIGGLE_PERIOD_DEFAULT (1000 * JIGGLE_MS)
+#define JIGGLE_PERIOD_MAX     (10000 * JIGGLE_MS)
+#define JIGGLE_PER_MS_MAX     100
+// Scan gap counted as 1 ms: the steps it missed are dropped, not made at once.
+#define JIGGLE_STALL_MS       10
 // Change of the radius or the delay: a tap, each repeat while held.
 #define JIGGLE_TAP_STEP       1
 #define JIGGLE_HOLD_STEP      10
@@ -462,13 +483,21 @@ float jiggle_delay_min_sound  [][2] = SONG(E__NOTE(_G5), E__NOTE(_E5),
 #define JIGGLE_RADIUS_MAX     2000
 
 static bool     jiggle_active = false;
-static bool     jiggle_click  = false;
+static uint8_t  jiggle_click  = 0; // 0: no click, 1-8: N, NE, E ... NW
 static int16_t  jiggle_radius = JIGGLE_RADIUS_DEFAULT;
-static uint16_t jiggle_delay  = JIGGLE_DELAY_DEFAULT; // ms between two steps
+static uint32_t jiggle_period = JIGGLE_PERIOD_DEFAULT; // between two steps
+static uint32_t jiggle_budget = 0; // time owed to steps, same unit
 static int16_t  jiggle_x      = 0; // cursor offset from the center, y down
 static int16_t  jiggle_y      = 0;
 static int16_t  jiggle_on     = 0; // radius of (jiggle_x, jiggle_y), 0: never
+static int16_t  jiggle_dx     = 0; // steps made, not sent yet
+static int16_t  jiggle_dy     = 0;
 static uint16_t jiggle_timer  = 0;
+
+// Click points of jiggle_click 1-8, as directions from the center, y down.
+static const int8_t jiggle_click_dir[8][2] = {
+    {0, -1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1},
+};
 
 // Radius or delay key pressed (M_JG_RUP/RDN/DUP/DDN), 0 = none.
 static uint16_t jiggle_key         = 0;
@@ -722,10 +751,8 @@ static void jiggle_report(int8_t dx, int8_t dy, uint8_t buttons) {
     host_mouse_send(&report);
 }
 
-// Moves the cursor by (dx, dy), split in reports of at most 127 per axis.
-static void jiggle_move(int16_t dx, int16_t dy) {
-    jiggle_x += dx;
-    jiggle_y += dy;
+// Sends a move of (dx, dy), split in reports of at most 127 per axis.
+static void jiggle_send(int16_t dx, int16_t dy) {
     while (dx || dy) {
         int8_t sx = dx > 127 ? 127 : (dx < -127 ? -127 : dx);
         int8_t sy = dy > 127 ? 127 : (dy < -127 ? -127 : dy);
@@ -735,6 +762,20 @@ static void jiggle_move(int16_t dx, int16_t dy) {
     }
 }
 
+// Moves the cursor by (dx, dy) right away.
+static void jiggle_move(int16_t dx, int16_t dy) {
+    jiggle_x += dx;
+    jiggle_y += dy;
+    jiggle_send(dx, dy);
+}
+
+// Sends the steps made since the last report.
+static void jiggle_flush(void) {
+    jiggle_send(jiggle_dx, jiggle_dy);
+    jiggle_dx = 0;
+    jiggle_dy = 0;
+}
+
 // Distance of (x, y) to the circle, as |x^2 + y^2 - r^2|.
 static int32_t jiggle_error(int32_t x, int32_t y) {
     int32_t e = x * x + y * y - (int32_t)jiggle_radius * jiggle_radius;
@@ -742,8 +783,11 @@ static int32_t jiggle_error(int32_t x, int32_t y) {
 }
 
 /**
- * Moves the cursor one pixel clockwise (on screen, y pointing down) along the
- * circle, and clicks when it crosses the bottom right point, where x = y > 0.
+ * Makes one pixel step clockwise (on screen, y pointing down) along the circle,
+ * sent by the next jiggle_flush(). Crossing the click point of jiggle_click,
+ * the half line from the center along (cx, cy), it sends the steps so far, then
+ * a left click: the cross product cx * y - cy * x turns from negative to zero
+ * or positive while the dot product cx * x + cy * y stays positive.
  */
 static void jiggle_step(void) {
     // Clockwise tangent at (x, y) with y pointing down: (-y, x).
@@ -768,9 +812,22 @@ static void jiggle_step(void) {
             best_y = sy;
         }
     }
-    bool before = jiggle_x > jiggle_y;
-    jiggle_move(best_x, best_y);
-    if (jiggle_click && before && jiggle_x <= jiggle_y && jiggle_x > 0) {
+    int8_t  cx     = 0;
+    int8_t  cy     = 0;
+    int32_t before = 0;
+    if (jiggle_click) {
+        cx     = jiggle_click_dir[jiggle_click - 1][0];
+        cy     = jiggle_click_dir[jiggle_click - 1][1];
+        before = (int32_t)cx * jiggle_y - (int32_t)cy * jiggle_x;
+    }
+    jiggle_x += best_x;
+    jiggle_y += best_y;
+    jiggle_dx += best_x;
+    jiggle_dy += best_y;
+    if (jiggle_click && before < 0 &&
+        (int32_t)cx * jiggle_y - (int32_t)cy * jiggle_x >= 0 &&
+        (int32_t)cx * jiggle_x + (int32_t)cy * jiggle_y > 0) {
+        jiggle_flush();
         jiggle_report(0, 0, MOUSE_BTN1);
         jiggle_report(0, 0, 0);
     }
@@ -820,27 +877,51 @@ static bool jiggle_radius_add(int16_t step) {
     return true;
 }
 
+// Pixels per millisecond of a jiggle_period of 1 ms or less, rounded.
+static uint32_t jiggle_per_ms(void) {
+    return (JIGGLE_MS + jiggle_period / 2) / jiggle_period;
+}
+
 /**
- * Adds step ms (removes if negative) to jiggle_delay, kept within
- * JIGGLE_DELAY_MIN and JIGGLE_DELAY_MAX. Already at that limit: plays its sound
- * and returns false.
+ * Lengthens (step > 0) or shortens (step < 0) jiggle_period by |step| ms from
+ * 1 ms up, by |step| pixels per millisecond below, kept within
+ * JIGGLE_PER_MS_MAX pixels per millisecond and JIGGLE_PERIOD_MAX; it stops at
+ * 1 ms on the way across. Already at that limit: plays its sound and returns
+ * false.
  */
 static bool jiggle_delay_add(int16_t step) {
-    if (step > 0 && jiggle_delay >= JIGGLE_DELAY_MAX) {
-        PLAY_SONG(jiggle_delay_max_sound);
-        return false;
+    if (step > 0) {
+        if (jiggle_period >= JIGGLE_PERIOD_MAX) {
+            PLAY_SONG(jiggle_delay_max_sound);
+            return false;
+        }
+        if (jiggle_period < JIGGLE_MS) {
+            int32_t n     = (int32_t)jiggle_per_ms() - step;
+            jiggle_period = n > 1 ? JIGGLE_MS / n : JIGGLE_MS;
+        } else {
+            jiggle_period += (uint32_t)step * JIGGLE_MS;
+            if (jiggle_period > JIGGLE_PERIOD_MAX) {
+                jiggle_period = JIGGLE_PERIOD_MAX;
+            }
+        }
+    } else {
+        uint32_t less = (uint32_t)(-step) * JIGGLE_MS;
+        if (jiggle_period > JIGGLE_MS) {
+            jiggle_period = jiggle_period - JIGGLE_MS > less ?
+                jiggle_period - less : JIGGLE_MS;
+        } else {
+            uint32_t n = jiggle_per_ms();
+            if (n >= JIGGLE_PER_MS_MAX) {
+                PLAY_SONG(jiggle_delay_min_sound);
+                return false;
+            }
+            n += -step;
+            if (n > JIGGLE_PER_MS_MAX) {
+                n = JIGGLE_PER_MS_MAX;
+            }
+            jiggle_period = JIGGLE_MS / n;
+        }
     }
-    if (step < 0 && jiggle_delay <= JIGGLE_DELAY_MIN) {
-        PLAY_SONG(jiggle_delay_min_sound);
-        return false;
-    }
-    int32_t delay = (int32_t)jiggle_delay + step;
-    if (delay > JIGGLE_DELAY_MAX) {
-        delay = JIGGLE_DELAY_MAX;
-    } else if (delay < JIGGLE_DELAY_MIN) {
-        delay = JIGGLE_DELAY_MIN;
-    }
-    jiggle_delay = delay;
     return true;
 }
 
@@ -963,14 +1044,20 @@ uint16_t dac_value_generate(void) {
  * matrix_scan_kb() of the same file, which calls it.
  */
 void matrix_scan_user(void) {
-    if (jiggle_active && timer_elapsed(jiggle_timer) >= jiggle_delay) {
-        // Steps on a fixed grid of jiggle_delay ms, so the scan latency does
-        // not add up; a late scan resets the grid instead of catching up.
-        jiggle_timer += jiggle_delay;
-        if (timer_elapsed(jiggle_timer) >= jiggle_delay) {
-            jiggle_timer = timer_read();
+    // Once per millisecond: makes the steps the elapsed time pays for, then
+    // sends them as a single report.
+    if (jiggle_active && timer_elapsed(jiggle_timer)) {
+        uint16_t ms  = timer_elapsed(jiggle_timer);
+        jiggle_timer = timer_read();
+        if (ms > JIGGLE_STALL_MS) {
+            ms = 1;
         }
-        jiggle_step();
+        jiggle_budget += ms * JIGGLE_MS;
+        while (jiggle_budget >= jiggle_period) {
+            jiggle_budget -= jiggle_period;
+            jiggle_step();
+        }
+        jiggle_flush();
     }
     jiggle_key_repeat();
     if (audio_volume != 100 &&
@@ -1292,15 +1379,18 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 jiggle_fit();
                 jiggle_active = true;
                 jiggle_timer  = timer_read();
+                jiggle_budget = 0;
             } else {
                 PLAY_SONG(jiggle_off_sound);
                 jiggle_active = false;
             }
             return false;
         case M_JG_CTG:
-            jiggle_click = !jiggle_click;
+            jiggle_click = (jiggle_click + 1) % 9;
             if (jiggle_click) {
-                PLAY_SONG(jiggle_click_on_sound);
+                jiggle_click_sound[0][0] = jiggle_click_notes[jiggle_click - 1];
+                jiggle_click_sound[2][0] = jiggle_click_notes[jiggle_click - 1];
+                PLAY_SONG(jiggle_click_sound);
             } else {
                 PLAY_SONG(jiggle_click_off_sound);
             }
